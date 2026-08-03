@@ -2363,6 +2363,8 @@ select[multiple] {
     </main>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const STORAGE_KEY = "seula-monthly-report-dashboard-v1";
@@ -4977,16 +4979,6 @@ select[multiple] {
       return `seula-${selectedMonth}-${name}-monthly-report.${extension}`;
     }
 
-    function collectStyleText() {
-      return Array.from(document.styleSheets).map((sheet) => {
-        try {
-          return Array.from(sheet.cssRules).map((rule) => rule.cssText).join("\n");
-        } catch {
-          return "";
-        }
-      }).join("\n");
-    }
-
     function downloadUrl(url, filename) {
       const link = document.createElement("a");
       link.href = url;
@@ -5006,7 +4998,7 @@ select[multiple] {
       return new Promise((resolve) => canvas.toBlob(resolve, "image/png", 0.96));
     }
 
-    async function buildReportPageSvg() {
+    async function renderReportPageCanvas() {
       renderReport();
       await document.fonts?.ready;
       const report = $("#reportCard");
@@ -5017,60 +5009,28 @@ select[multiple] {
       holder.style.position = "fixed";
       holder.style.left = "-10000px";
       holder.style.top = "0";
+      holder.style.width = "1120px";
       holder.style.background = "#fff";
       holder.appendChild(clone);
       document.body.appendChild(holder);
       await new Promise((resolve) => requestAnimationFrame(resolve));
-
-      const sourceWidth = Math.ceil(clone.scrollWidth);
-      const sourceHeight = Math.ceil(clone.scrollHeight);
-      const cssText = collectStyleText();
-      clone.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-      const cloneMarkup = new XMLSerializer()
-        .serializeToString(clone)
-        .replace(/&nbsp;/g, "&#160;");
-      const svg = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="${sourceWidth}" height="${sourceHeight}" viewBox="0 0 ${sourceWidth} ${sourceHeight}">
-          <foreignObject width="100%" height="100%">
-            <div xmlns="http://www.w3.org/1999/xhtml">
-              <style><![CDATA[${cssText}]]></style>
-              ${cloneMarkup}
-            </div>
-          </foreignObject>
-        </svg>
-      `;
-      holder.remove();
-      return { svg, sourceWidth, sourceHeight };
-    }
-
-    async function renderReportPageCanvas() {
-      const { svg, sourceWidth, sourceHeight } = await buildReportPageSvg();
-      const svgUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
-      const image = new Image();
-      const loaded = new Promise((resolve, reject) => {
-        image.onload = resolve;
-        image.onerror = reject;
-      });
-      image.src = svgUrl;
-      await loaded;
-
-      const pageWidth = 1240;
-      const pageHeight = 1754;
-      const pagePadding = 36;
-      const canvas = document.createElement("canvas");
-      canvas.width = pageWidth;
-      canvas.height = pageHeight;
-      const context = canvas.getContext("2d");
-      context.fillStyle = "#fff";
-      context.fillRect(0, 0, pageWidth, pageHeight);
-      const scale = Math.min((pageWidth - pagePadding * 2) / sourceWidth, (pageHeight - pagePadding * 2) / sourceHeight);
-      const drawWidth = sourceWidth * scale;
-      const drawHeight = sourceHeight * scale;
-      const drawX = (pageWidth - drawWidth) / 2;
-      const drawY = (pageHeight - drawHeight) / 2;
-      context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
-      URL.revokeObjectURL(svgUrl);
-      return canvas;
+      try {
+        if (typeof window.html2canvas !== "function") {
+          throw new Error("이미지 저장 모듈을 불러오지 못했습니다.");
+        }
+        return await window.html2canvas(clone, {
+          backgroundColor: "#ffffff",
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          width: clone.scrollWidth,
+          height: clone.scrollHeight,
+          windowWidth: clone.scrollWidth,
+          windowHeight: clone.scrollHeight
+        });
+      } finally {
+        holder.remove();
+      }
     }
 
     async function saveReportImage() {
@@ -5084,13 +5044,7 @@ select[multiple] {
         if (!blob) throw new Error("이미지 생성 실패");
         downloadBlob(blob, reportFileName("png"));
       } catch {
-        try {
-          const { svg } = await buildReportPageSvg();
-          downloadBlob(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }), reportFileName("svg"));
-          window.alert("PNG 저장이 브라우저 제한으로 막혀 SVG 이미지 파일로 저장했습니다.");
-        } catch {
-          window.alert("이미지 저장을 완료하지 못했습니다. PDF 저장 버튼을 이용해주세요.");
-        }
+        window.alert("이미지 저장 모듈을 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침해주세요.");
       } finally {
         button.disabled = false;
         button.textContent = originalText;
@@ -5100,45 +5054,25 @@ select[multiple] {
     async function saveReportPdf() {
       const button = $("#saveReportPdfButton");
       const originalText = button.textContent;
-      const printWindow = window.open("", "_blank");
-      if (!printWindow) {
-        window.alert("PDF 저장 창을 열 수 없습니다. 팝업 차단을 해제한 뒤 다시 시도해주세요.");
-        return;
-      }
-      printWindow.document.write("<p style='font-family:sans-serif;padding:20px;'>PDF 저장용 1장 리포트를 만드는 중입니다...</p>");
       try {
         button.disabled = true;
         button.textContent = "PDF 준비 중";
         const canvas = await renderReportPageCanvas();
-        const imageUrl = canvas.toDataURL("image/png", 0.96);
-        printWindow.document.open();
-        printWindow.document.write(`
-          <!doctype html>
-          <html lang="ko">
-          <head>
-            <meta charset="utf-8">
-            <title>${reportFileName("pdf")}</title>
-            <style>
-              @page { size: A4 portrait; margin: 0; }
-              html, body { margin: 0; padding: 0; background: #fff; }
-              img { display: block; width: 100vw; height: 100vh; object-fit: contain; page-break-after: avoid; }
-            </style>
-          </head>
-          <body>
-            <img src="${imageUrl}" alt="월말리포트">
-            <script>
-              window.addEventListener("load", () => {
-                window.focus();
-                window.print();
-              });
-            <\/script>
-          </body>
-          </html>
-        `);
-        printWindow.document.close();
+        const JsPdf = window.jspdf?.jsPDF;
+        if (!JsPdf) throw new Error("PDF 저장 모듈을 불러오지 못했습니다.");
+        const pdf = new JsPdf({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+        const margin = 5;
+        const pageWidth = 210 - margin * 2;
+        const pageHeight = 297 - margin * 2;
+        const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
+        const imageWidth = canvas.width * ratio;
+        const imageHeight = canvas.height * ratio;
+        const imageX = (210 - imageWidth) / 2;
+        const imageY = (297 - imageHeight) / 2;
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.94), "JPEG", imageX, imageY, imageWidth, imageHeight, undefined, "FAST");
+        pdf.save(reportFileName("pdf"));
       } catch {
-        printWindow.close();
-        window.alert("PDF 저장 화면을 준비하지 못했습니다. 잠시 후 다시 시도해주세요.");
+        window.alert("PDF 저장 모듈을 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침해주세요.");
       } finally {
         button.disabled = false;
         button.textContent = originalText;
