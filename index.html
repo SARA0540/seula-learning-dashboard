@@ -176,6 +176,23 @@
       font-size: 12px;
     }
 
+    .student-pin-panel {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .student-pin-panel input {
+      height: 38px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 4px;
+    }
+
     .sync-status {
       display: inline-flex;
       align-items: center;
@@ -1264,6 +1281,189 @@ select[multiple] {
       background: #fbfcfa;
     }
 
+    .student-login-welcome {
+      display: none;
+      max-width: 560px;
+      margin: 56px auto 0;
+      padding: 44px 32px;
+      text-align: center;
+    }
+
+    .student-login-welcome strong {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--ink);
+      font-size: 22px;
+    }
+
+    .student-login-welcome p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    body[data-account-role="student"] {
+      background: #f3f7f3;
+    }
+
+    body[data-account-role="student"] .app {
+      display: block;
+    }
+
+    body[data-account-role="student"] .sidebar {
+      position: sticky;
+      z-index: 20;
+      top: 0;
+      width: 100%;
+      height: auto;
+      padding: 14px 28px;
+      border: 0;
+      border-bottom: 1px solid #195e43;
+      background: #074c34;
+      color: #fff;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 18px;
+    }
+
+    body[data-account-role="student"] .brand {
+      flex: 0 0 auto;
+      padding: 0;
+      border: 0;
+    }
+
+    body[data-account-role="student"] .brand span,
+    body[data-account-role="student"] .account-title,
+    body[data-account-role="student"] .account-help,
+    body[data-account-role="student"] .supabase-settings,
+    body[data-account-role="student"] .nav,
+    body[data-account-role="student"] .sidebar-note,
+    body[data-account-role="student"] #studentAccountLabel {
+      display: none !important;
+    }
+
+    body[data-account-role="student"] .account-panel {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+    }
+
+    body[data-account-role="student"] .role-segment {
+      display: flex;
+      width: auto;
+    }
+
+    body[data-account-role="student"][data-student-signed-in="true"] .role-segment {
+      display: none;
+    }
+
+    body[data-account-role="student"] .role-segment button {
+      min-width: 76px;
+      border-color: rgba(255, 255, 255, 0.34);
+      background: transparent;
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    body[data-account-role="student"] .role-segment button.active {
+      border-color: #fff;
+      background: #fff;
+      color: #074c34;
+    }
+
+    body[data-account-role="student"] .student-pin-panel {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+    }
+
+    body[data-account-role="student"] .student-pin-panel label {
+      color: rgba(255, 255, 255, 0.82);
+    }
+
+    body[data-account-role="student"] .student-pin-panel input {
+      width: 132px;
+      height: 38px;
+      border-color: rgba(255, 255, 255, 0.42);
+    }
+
+    body[data-account-role="student"] .student-pin-panel .button-row {
+      flex-wrap: nowrap;
+    }
+
+    body[data-account-role="student"] .student-pin-panel .primary {
+      border-color: #fff;
+      background: #fff;
+      color: #074c34;
+    }
+
+    body[data-account-role="student"] .student-pin-panel .ghost {
+      border-color: rgba(255, 255, 255, 0.42);
+      background: transparent;
+      color: #fff;
+    }
+
+    body[data-account-role="student"] .student-pin-panel .sync-status {
+      align-self: center;
+      color: #dff3e8;
+      white-space: nowrap;
+    }
+
+    body[data-account-role="student"][data-student-signed-in="true"] #studentPinPanel label,
+    body[data-account-role="student"][data-student-signed-in="true"] #studentPinLoginButton {
+      display: none;
+    }
+
+    body[data-account-role="student"][data-student-signed-in="false"] #studentPinLogoutButton {
+      display: none;
+    }
+
+    body[data-account-role="student"] .main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 34px 28px 56px;
+    }
+
+    body[data-account-role="student"] .topbar {
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    body[data-account-role="student"] #studentFilterLabel {
+      display: none;
+    }
+
+    body[data-account-role="student"] #studentPortalView .section-head {
+      align-items: center;
+    }
+
+    body[data-account-role="student"] .student-portal-grid {
+      grid-template-columns: minmax(240px, 0.7fr) minmax(0, 1.3fr);
+    }
+
+    body[data-account-role="student"] .word-check-row {
+      background: #f7faf7;
+    }
+
+    body[data-account-role="student"][data-student-signed-in="false"] .student-login-welcome {
+      display: block;
+    }
+
+    body[data-account-role="student"][data-student-signed-in="false"] #studentPortalContent,
+    body[data-account-role="student"][data-student-signed-in="false"] #studentPortalView > .section-head {
+      display: none;
+    }
+
     @media (max-width: 980px) {
       .app {
         grid-template-columns: 1fr;
@@ -1311,6 +1511,40 @@ select[multiple] {
       .form-grid,
       .form-grid.two {
         grid-template-columns: 1fr;
+      }
+
+      body[data-account-role="student"] .sidebar {
+        padding: 14px 16px;
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      body[data-account-role="student"] .account-panel,
+      body[data-account-role="student"] .student-pin-panel {
+        width: 100%;
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      body[data-account-role="student"] .role-segment {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      body[data-account-role="student"] .student-pin-panel input {
+        width: 100%;
+      }
+
+      body[data-account-role="student"] .student-pin-panel .button-row button {
+        flex: 1;
+      }
+
+      body[data-account-role="student"] .student-pin-panel .sync-status {
+        align-self: flex-start;
+      }
+
+      body[data-account-role="student"] .main {
+        padding: 24px 16px 40px;
       }
     }
 
@@ -1474,10 +1708,20 @@ select[multiple] {
           <div class="button-row">
             <button class="primary" id="supabaseLoginButton" type="button">로그인</button>
             <button class="ghost" id="supabaseLogoutButton" type="button">로그아웃</button>
-            <button class="ghost" id="supabaseSyncButton" type="button">동기화</button>
+          <button class="ghost" id="supabaseSyncButton" type="button">동기화</button>
           </div>
           <span class="sync-status" id="supabaseStatus">로컬 저장 중</span>
         </details>
+        <section class="student-pin-panel hidden" id="studentPinPanel" aria-label="학생 접속번호">
+          <label>4자리 접속번호
+            <input id="studentPinInput" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="0000">
+          </label>
+          <div class="button-row">
+            <button class="primary" id="studentPinLoginButton" type="button">학생 접속</button>
+            <button class="ghost" id="studentPinLogoutButton" type="button">나가기</button>
+          </div>
+          <span class="sync-status" id="studentPinStatus">번호를 입력해주세요.</span>
+        </section>
       </section>
       <nav class="nav" aria-label="주요 화면">
         <button class="active" data-view="dashboardView" data-role-access="teacher">대시보드</button>
@@ -1495,15 +1739,15 @@ select[multiple] {
     <main class="main">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Learning Dashboard</p>
-          <h1>슬아영어 학습 대시보드</h1>
+          <p class="eyebrow" id="workspaceEyebrow">Learning Dashboard</p>
+          <h1 id="workspaceTitle">슬아영어 학습 대시보드</h1>
         </div>
         <div class="filters">
           <label>
             월 선택
             <input id="monthInput" type="month">
           </label>
-          <label>
+          <label id="studentFilterLabel">
             학생 선택
             <select id="studentSelect"></select>
           </label>
@@ -1592,14 +1836,19 @@ select[multiple] {
       </section>
 
       <section class="view" id="studentPortalView">
+        <section class="panel student-login-welcome" id="studentLoginWelcome">
+          <strong>내 단어 학습에 접속해요</strong>
+          <p>선생님께 받은 4자리 번호를 위 입력란에 적고<br>‘학생 접속’ 버튼을 눌러주세요.</p>
+        </section>
         <div class="section-head">
           <div>
             <p class="eyebrow">Student Account</p>
-            <h2>내 학습 현황</h2>
+            <h2>나의 단어 학습</h2>
           </div>
           <span class="role-pill" id="studentPortalName">학생 계정</span>
         </div>
 
+        <div id="studentPortalContent">
         <div class="student-portal-grid">
           <section class="panel">
             <div class="panel-head">
@@ -1643,6 +1892,7 @@ select[multiple] {
             </table>
           </div>
         </section>
+        </div>
       </section>
 
       <section class="view" id="studentsView">
@@ -1659,6 +1909,7 @@ select[multiple] {
             <label>학교<input id="newSchool" type="text" placeholder="예: 장동초등학교"></label>
             <label>학년<input id="newGrade" type="text" placeholder="예: 5학년"></label>
             <label>수업 요일<input id="newDays" type="text" placeholder="예: 월수금"></label>
+            <label>학생 접속번호<input id="newAccessCode" type="text" inputmode="numeric" maxlength="4" placeholder="예: 1357"></label>
           </div>
           <div class="button-row">
             <button class="primary" id="addStudentButton">학생 추가</button>
@@ -2018,6 +2269,7 @@ select[multiple] {
     const STORAGE_KEY = "seula-monthly-report-dashboard-v1";
     const ACCOUNT_STORAGE_KEY = "seula-learning-dashboard-account-v1";
     const SUPABASE_CONFIG_STORAGE_KEY = "seula-learning-dashboard-supabase-v1";
+    const STUDENT_PIN_STORAGE_KEY = "seula-learning-dashboard-student-pin-v1";
     const SUPABASE_CONFIG = {
       url: "",
       anonKey: ""
@@ -2029,9 +2281,9 @@ select[multiple] {
 
     const seedData = {
       students: [
-        { id: "stu-1", name: "이서준", school: "장동초등학교", grade: "5학년", days: "월수금" },
-        { id: "stu-2", name: "김민서", school: "슬아초등학교", grade: "4학년", days: "화목" },
-        { id: "stu-3", name: "박지우", school: "정담초등학교", grade: "6학년", days: "월수금" }
+        { id: "stu-1", name: "이서준", school: "장동초등학교", grade: "5학년", days: "월수금", accessCode: "1001" },
+        { id: "stu-2", name: "김민서", school: "슬아초등학교", grade: "4학년", days: "화목", accessCode: "1002" },
+        { id: "stu-3", name: "박지우", school: "정담초등학교", grade: "6학년", days: "월수금", accessCode: "1003" }
       ],
       monthlyTests: [
         { studentId: "stu-1", month: currentMonth, section: "독해", range: "Subject Links Unit 03", score: 88, previous: 84 },
@@ -2098,6 +2350,7 @@ select[multiple] {
 
     let data = loadData();
     let accountState = loadAccountState();
+    let studentPinSession = loadStudentPinSession();
     let selectedMonth = currentMonth;
     let selectedStudentId = data.students[0]?.id || "";
     let dashboardDate = todayString();
@@ -2110,6 +2363,7 @@ select[multiple] {
     let currentProfile = null;
     let remoteSaveTimer = null;
     let remoteSaveInProgress = false;
+    let attendanceRefreshTimer = null;
 
     const $ = (selector) => document.querySelector(selector);
     const $$ = (selector) => Array.from(document.querySelectorAll(selector));
@@ -2143,6 +2397,16 @@ select[multiple] {
         name: book.name || `교재 ${index + 1}`,
         chapter: book.chapter || "기본",
         totalUnits: Math.max(1, Number(book.totalUnits) || 1)
+      }));
+
+      normalized.students = normalized.students.map((student, index) => ({
+        ...student,
+        id: student.id || uid("stu"),
+        name: student.name || `학생 ${index + 1}`,
+        school: student.school || "-",
+        grade: student.grade || "-",
+        days: student.days || "-",
+        accessCode: normalizeAccessCode(student.accessCode || student.access_code || "")
       }));
 
       normalized.wordTests = normalized.wordTests.map((test) => {
@@ -2246,6 +2510,44 @@ select[multiple] {
       return accountState.role === "teacher";
     }
 
+    function loadStudentPinSession() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STUDENT_PIN_STORAGE_KEY) || "null");
+        return { studentId: saved?.studentId || "", accessCode: saved?.accessCode || "" };
+      } catch (error) {
+        console.warn(error);
+        return { studentId: "", accessCode: "" };
+      }
+    }
+
+    function saveStudentPinSession() {
+      localStorage.setItem(STUDENT_PIN_STORAGE_KEY, JSON.stringify(studentPinSession));
+    }
+
+    function clearStudentPinSession() {
+      studentPinSession = { studentId: "", accessCode: "" };
+      localStorage.removeItem(STUDENT_PIN_STORAGE_KEY);
+    }
+
+    function normalizeAccessCode(value) {
+      const digits = String(value || "").replace(/\D/g, "").slice(0, 4);
+      return digits.length === 4 ? digits : "";
+    }
+
+    function generateAccessCode() {
+      const used = new Set(data.students.map((item) => normalizeAccessCode(item.accessCode)).filter(Boolean));
+      for (let tries = 0; tries < 2000; tries += 1) {
+        const code = String(Math.floor(1000 + Math.random() * 9000));
+        if (!used.has(code)) return code;
+      }
+      return "";
+    }
+
+    function studentByAccessCode(code) {
+      const normalized = normalizeAccessCode(code);
+      return data.students.find((item) => normalizeAccessCode(item.accessCode) === normalized);
+    }
+
     function loadSupabaseConfig() {
       try {
         const saved = JSON.parse(localStorage.getItem(SUPABASE_CONFIG_STORAGE_KEY) || "null");
@@ -2282,6 +2584,19 @@ select[multiple] {
       return supabaseClient;
     }
 
+    function supabaseErrorMessage(error) {
+      const message = String(error?.message || error || "").trim();
+      if (!message) return "알 수 없는 오류";
+      if (/Invalid login credentials/i.test(message)) return "이메일 또는 비밀번호가 달라요";
+      if (/Email not confirmed/i.test(message)) return "이메일 확인이 아직 안 됐어요";
+      if (/Failed to fetch|NetworkError/i.test(message)) return "Supabase 주소 또는 인터넷 연결을 확인해주세요";
+      if (/JWT|API key|apikey|Invalid API key/i.test(message)) return "anon public key를 확인해주세요";
+      if (/relation .* does not exist/i.test(message)) return "SQL Editor에서 schema.sql 실행이 필요해요";
+      if (/violates foreign key constraint/i.test(message)) return "프로필의 학생 연결을 먼저 확인해주세요";
+      if (/permission denied|row-level security|policy/i.test(message)) return "Supabase 권한 설정을 확인해주세요";
+      return message.slice(0, 80);
+    }
+
     function uid(prefix) {
       return `${prefix}-${Date.now()}-${Math.round(Math.random() * 1000)}`;
     }
@@ -2303,6 +2618,7 @@ select[multiple] {
     }
 
     function student() {
+      if (!isTeacherAccount() && !studentPinSession.studentId) return null;
       return data.students.find((item) => item.id === selectedStudentId) || data.students[0];
     }
 
@@ -2324,6 +2640,7 @@ select[multiple] {
       $$(".nav button").forEach((item) => item.classList.toggle("active", item.dataset.view === targetView));
       $$(".view").forEach((view) => view.classList.toggle("active", view.id === targetView));
       renderReport();
+      if (targetView === "dashboardView") refreshTeacherAttendance();
     }
 
     function ensureAccountStudent() {
@@ -2331,6 +2648,15 @@ select[multiple] {
         accountState.studentId = "";
         selectedStudentId = "";
         return;
+      }
+      if (!isTeacherAccount() && !studentPinSession.studentId) {
+        accountState.studentId = "";
+        selectedStudentId = "";
+        saveAccountState();
+        return;
+      }
+      if (!isTeacherAccount() && studentPinSession.studentId && data.students.some((item) => item.id === studentPinSession.studentId)) {
+        accountState.studentId = studentPinSession.studentId;
       }
       if (!data.students.some((item) => item.id === accountState.studentId)) {
         accountState.studentId = selectedStudentId || data.students[0].id;
@@ -2342,6 +2668,7 @@ select[multiple] {
     function syncAccountUi() {
       ensureAccountStudent();
       document.body.dataset.accountRole = accountState.role;
+      document.body.dataset.studentSignedIn = !isTeacherAccount() && Boolean(studentPinSession.studentId) ? "true" : "false";
       $$("[data-role-switch]").forEach((button) => {
         button.classList.toggle("active", button.dataset.roleSwitch === accountState.role);
       });
@@ -2352,12 +2679,18 @@ select[multiple] {
 
       $("#studentAccountSelect").innerHTML = data.students.map((item) => `<option value="${item.id}">${item.name} (${item.grade || "-"})</option>`).join("");
       $("#studentAccountSelect").value = accountState.studentId || selectedStudentId;
-      $("#studentAccountLabel").classList.toggle("hidden", isTeacherAccount());
+      $("#studentAccountLabel").classList.add("hidden");
+      $("#studentPinPanel").classList.toggle("hidden", isTeacherAccount());
+      $("#studentPinStatus").textContent = !isTeacherAccount() && studentPinSession.studentId
+        ? `${student()?.name || "학생"} 접속 중`
+        : "4자리 번호를 입력해주세요.";
+      $("#workspaceEyebrow").textContent = isTeacherAccount() ? "Learning Dashboard" : "Student Word Check";
+      $("#workspaceTitle").textContent = isTeacherAccount() ? "슬아영어 학습 대시보드" : "나의 단어 학습";
       $("#studentSelect").value = selectedStudentId;
       $("#studentSelect").disabled = !isTeacherAccount();
       $("#accountModeText").textContent = isTeacherAccount()
         ? "선생님은 전체 자료 입력, 상담기록, 리포트 생성을 관리합니다."
-        : "학생은 자기 단어 암기 체크와 이번달 학습 현황만 확인합니다.";
+        : "학생은 4자리 번호로 접속해 자기 단어 암기 체크만 저장합니다.";
 
       const activeView = $(".view.active")?.id;
       if (!activeView || !viewAllowed(activeView)) activateView(defaultViewForRole());
@@ -2373,6 +2706,25 @@ select[multiple] {
       const today = new Date();
       today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
       return today.toISOString().slice(0, 10);
+    }
+
+    function seoulDateTime() {
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Seoul",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+      }).formatToParts(new Date()).reduce((result, part) => {
+        if (part.type !== "literal") result[part.type] = part.value;
+        return result;
+      }, {});
+      return {
+        date: `${parts.year}-${parts.month}-${parts.day}`,
+        time: `${parts.hour === "24" ? "00" : parts.hour}:${parts.minute}`
+      };
     }
 
     function dateLabel(date) {
@@ -2719,6 +3071,25 @@ select[multiple] {
       renderDailyStatus();
     }
 
+    function recordLocalStudentArrival(studentId) {
+      const now = seoulDateTime();
+      let record = data.dailyStatuses.find((item) => item.studentId === studentId && item.date === now.date);
+      if (!record) {
+        record = {
+          id: dailyRecordId(studentId, now.date),
+          studentId,
+          date: now.date,
+          arrivalTime: now.time,
+          attendance: "출석"
+        };
+        data.dailyStatuses.push(record);
+      } else {
+        if (!record.arrivalTime) record.arrivalTime = now.time;
+        if (!record.attendance || ["미확인", "결석"].includes(record.attendance)) record.attendance = "출석";
+      }
+      saveLocalDataOnly();
+    }
+
     function openInputForStudent(studentId) {
       selectedStudentId = studentId;
       renderAll();
@@ -2837,7 +3208,7 @@ select[multiple] {
           <article class="student-row">
             <div>
               <strong>${item.name}</strong>
-              <span>${item.school} · ${item.grade} · ${item.days}</span>
+              <span>${item.school} · ${item.grade} · ${item.days} · 접속번호 ${item.accessCode || "미설정"}</span>
             </div>
             <div>
               <span class="${summary.risk ? "status risk" : "status"}">${summary.risk ? "확인 필요" : "안정권"}</span>
@@ -2958,6 +3329,7 @@ select[multiple] {
       }
       Object.assign(record, updates, { updatedAt: new Date().toISOString() });
       saveData();
+      saveStudentPinMemoryRemote(record);
     }
 
     function renderStudentPortal() {
@@ -3022,7 +3394,8 @@ select[multiple] {
           name: item.name,
           school: item.school || null,
           grade: item.grade || null,
-          days: item.days || null
+          days: item.days || null,
+          access_code: normalizeAccessCode(item.accessCode) || null
         })),
         textbooks: data.textbooks.map((item) => ({
           id: item.id,
@@ -3110,7 +3483,8 @@ select[multiple] {
           name: item.name,
           school: item.school || "-",
           grade: item.grade || "-",
-          days: item.days || "-"
+          days: item.days || "-",
+          accessCode: item.access_code || ""
         })),
         textbooks: (rows.textbooks || []).map((item) => ({
           id: item.id,
@@ -3212,7 +3586,7 @@ select[multiple] {
         const profileInput = {
           id: supabaseUser.id,
           role: "student",
-          student_id: accountState.role === "student" ? accountState.studentId || selectedStudentId || null : null,
+          student_id: null,
           display_name: supabaseUser.email
         };
         const inserted = await client.from("profiles").insert(profileInput).select("*").single();
@@ -3274,6 +3648,37 @@ select[multiple] {
       setSupabaseStatus(`${profile.role === "teacher" ? "선생님" : "학생"} 계정 연결됨`, "online");
     }
 
+    async function refreshTeacherAttendance() {
+      if (!isTeacherAccount() || !supabaseUser || document.hidden) return;
+      const client = getSupabaseClient();
+      if (!client) return;
+      try {
+        const { data: rows, error } = await client
+          .from("daily_statuses")
+          .select("id, student_id, date, arrival_time, attendance")
+          .eq("date", dashboardDate);
+        if (error) throw error;
+        const otherDates = data.dailyStatuses.filter((item) => item.date !== dashboardDate);
+        const currentDate = (rows || []).map((item) => ({
+          id: item.id,
+          studentId: item.student_id,
+          date: item.date,
+          arrivalTime: item.arrival_time || "",
+          attendance: item.attendance || "미확인"
+        }));
+        data.dailyStatuses = [...otherDates, ...currentDate];
+        saveLocalDataOnly();
+        if ($("#dashboardView").classList.contains("active")) renderDailyStatus();
+      } catch (error) {
+        console.warn("Attendance refresh failed", error);
+      }
+    }
+
+    function startAttendanceRefresh() {
+      clearInterval(attendanceRefreshTimer);
+      attendanceRefreshTimer = setInterval(refreshTeacherAttendance, 15000);
+    }
+
     async function clearTeacherRemoteTables(client) {
       const tables = [
         "word_memory_checks",
@@ -3330,7 +3735,7 @@ select[multiple] {
         setSupabaseStatus("Supabase 저장 완료", "online");
       } catch (error) {
         console.error(error);
-        setSupabaseStatus("Supabase 저장 확인 필요", "warn");
+        setSupabaseStatus(`저장 실패: ${supabaseErrorMessage(error)}`, "warn");
       } finally {
         remoteSaveInProgress = false;
       }
@@ -3359,13 +3764,82 @@ select[multiple] {
       }
 
       setSupabaseStatus("로그인 중", "warn");
-      const { error } = await client.auth.signInWithPassword({ email, password });
-      if (error) {
+      try {
+        const { error } = await client.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        await loadRemoteData();
+      } catch (error) {
         console.error(error);
-        setSupabaseStatus("로그인 실패", "warn");
-        return;
+        setSupabaseStatus(`로그인 실패: ${supabaseErrorMessage(error)}`, "warn");
       }
-      await loadRemoteData();
+    }
+
+    async function loadStudentByPin(accessCode) {
+      const code = normalizeAccessCode(accessCode);
+      if (!code) {
+        setSupabaseStatus("4자리 번호를 입력해주세요", "warn");
+        return false;
+      }
+
+      const client = getSupabaseClient();
+      if (client) {
+        try {
+          setSupabaseStatus("학생 자료 불러오는 중", "warn");
+          const { data: remoteRows, error } = await client.rpc("student_pin_login", { p_access_code: code });
+          if (error) throw error;
+          const incoming = supabaseRowsToAppData(remoteRows || {});
+          if (!incoming.students.length) throw new Error("번호에 맞는 학생을 찾지 못했어요");
+          data = incoming;
+          selectedStudentId = incoming.students[0].id;
+          studentPinSession = { studentId: selectedStudentId, accessCode: code };
+          accountState = { role: "student", studentId: selectedStudentId };
+          saveStudentPinSession();
+          saveAccountState();
+          saveLocalDataOnly();
+          setSupabaseStatus(`${student()?.name || "학생"} 접속됨 · 입실 기록 완료`, "online");
+          renderAll();
+          activateView("studentPortalView");
+          return true;
+        } catch (error) {
+          console.error(error);
+          setSupabaseStatus(`학생 접속 실패: ${supabaseErrorMessage(error)}`, "warn");
+          return false;
+        }
+      }
+
+      const localStudent = studentByAccessCode(code);
+      if (!localStudent) {
+        setSupabaseStatus("번호에 맞는 학생을 찾지 못했어요", "warn");
+        return false;
+      }
+      recordLocalStudentArrival(localStudent.id);
+      selectedStudentId = localStudent.id;
+      studentPinSession = { studentId: localStudent.id, accessCode: code };
+      accountState = { role: "student", studentId: localStudent.id };
+      saveStudentPinSession();
+      saveAccountState();
+      setSupabaseStatus(`${localStudent.name} 접속됨 · 입실 기록 완료`, "online");
+      renderAll();
+      activateView("studentPortalView");
+      return true;
+    }
+
+    async function saveStudentPinMemoryRemote(record) {
+      const client = getSupabaseClient();
+      if (!client || !studentPinSession.accessCode || isTeacherAccount()) return;
+      try {
+        const { error } = await client.rpc("student_memory_check_upsert", {
+          p_access_code: studentPinSession.accessCode,
+          p_key: record.key,
+          p_checked: Boolean(record.checked),
+          p_memorized: Number(record.memorized) || 0
+        });
+        if (error) throw error;
+        setSupabaseStatus("단어 체크 저장 완료", "online");
+      } catch (error) {
+        console.error(error);
+        setSupabaseStatus(`단어 체크 저장 실패: ${supabaseErrorMessage(error)}`, "warn");
+      }
     }
 
     async function logoutSupabase() {
@@ -3384,12 +3858,17 @@ select[multiple] {
         setSupabaseStatus("로컬 저장 중", "");
         return;
       }
-      const { data: sessionData } = await client.auth.getSession();
-      supabaseUser = sessionData?.session?.user || null;
-      if (supabaseUser) {
-        await loadRemoteData();
-      } else {
-        setSupabaseStatus("Supabase 로그인 전", "warn");
+      try {
+        const { data: sessionData } = await client.auth.getSession();
+        supabaseUser = sessionData?.session?.user || null;
+        if (supabaseUser) {
+          await loadRemoteData();
+        } else {
+          setSupabaseStatus("Supabase 로그인 전", "warn");
+        }
+      } catch (error) {
+        console.error(error);
+        setSupabaseStatus(`연결 확인 필요: ${supabaseErrorMessage(error)}`, "warn");
       }
     }
 
@@ -4428,7 +4907,9 @@ select[multiple] {
         button.addEventListener("click", () => {
           accountState.role = button.dataset.roleSwitch;
           if (!accountState.studentId) accountState.studentId = selectedStudentId || data.students[0]?.id || "";
-          if (!isTeacherAccount()) selectedStudentId = accountState.studentId;
+          if (!isTeacherAccount()) {
+            if (studentPinSession.studentId) selectedStudentId = studentPinSession.studentId;
+          }
           saveAccountState();
           resetEditState();
           resetCounselingEdit();
@@ -4444,6 +4925,24 @@ select[multiple] {
         resetEditState();
         resetCounselingEdit();
         renderAll();
+        refreshTeacherAttendance();
+      });
+
+      $("#studentPinLoginButton").addEventListener("click", () => loadStudentByPin($("#studentPinInput").value));
+      $("#studentPinInput").addEventListener("input", (event) => {
+        event.target.value = event.target.value.replace(/\D/g, "").slice(0, 4);
+      });
+      $("#studentPinInput").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") loadStudentByPin($("#studentPinInput").value);
+      });
+      $("#studentPinLogoutButton").addEventListener("click", () => {
+        clearStudentPinSession();
+        accountState = { role: "student", studentId: "" };
+        selectedStudentId = "";
+        saveAccountState();
+        setSupabaseStatus("학생 접속 종료", "");
+        renderAll();
+        activateView("studentPortalView");
       });
 
       $("#monthInput").addEventListener("change", (event) => {
@@ -4470,6 +4969,7 @@ select[multiple] {
         resetEditState();
         resetCounselingEdit();
         renderAll();
+        refreshTeacherAttendance();
       });
 
       $("#dailySearchInput").addEventListener("input", (event) => {
@@ -4521,10 +5021,12 @@ select[multiple] {
           name,
           school: $("#newSchool").value.trim() || "-",
           grade: $("#newGrade").value.trim() || "-",
-          days: $("#newDays").value.trim() || "-"
+          days: $("#newDays").value.trim() || "-",
+          accessCode: normalizeAccessCode($("#newAccessCode").value) || generateAccessCode()
         };
         data.students.push(newStudent);
         selectedStudentId = newStudent.id;
+        $("#newAccessCode").value = "";
         saveData();
         renderAll();
       });
@@ -4666,6 +5168,10 @@ select[multiple] {
     setupEvents();
     setDefaultDates();
     renderAll();
+    startAttendanceRefresh();
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) refreshTeacherAttendance();
+    });
     initSupabase().catch((error) => {
       console.error(error);
       setSupabaseStatus("Supabase 설정 확인 필요", "warn");
