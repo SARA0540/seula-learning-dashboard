@@ -938,6 +938,19 @@ select[multiple] {
       font-weight: 700;
     }
 
+    .student-row.editing {
+      border-color: var(--brand-2);
+      box-shadow: 0 0 0 3px rgba(15, 122, 70, 0.12);
+    }
+
+    .student-row-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     .form-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1386,6 +1399,10 @@ select[multiple] {
       background: transparent;
     }
 
+    body[data-account-role="student"] .student-pin-panel.hidden {
+      display: none;
+    }
+
     body[data-account-role="student"] .student-pin-panel label {
       color: rgba(255, 255, 255, 0.82);
     }
@@ -1692,9 +1709,19 @@ select[multiple] {
       <section class="account-panel" aria-label="계정 모드">
         <div class="account-title">계정 모드</div>
         <div class="role-segment">
-          <button class="active" type="button" data-role-switch="teacher">선생님</button>
-          <button type="button" data-role-switch="student">학생</button>
+          <button type="button" data-role-switch="teacher">선생님</button>
+          <button class="active" type="button" data-role-switch="student">학생</button>
         </div>
+        <section class="student-pin-panel teacher-pin-panel hidden" id="teacherPinPanel" aria-label="선생님 접속번호">
+          <label>선생님 번호
+            <input id="teacherPinInput" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="0000">
+          </label>
+          <div class="button-row">
+            <button class="primary" id="teacherPinLoginButton" type="button">선생님 접속</button>
+            <button class="ghost" id="teacherPinCancelButton" type="button">취소</button>
+          </div>
+          <span class="sync-status" id="teacherPinStatus">선생님 번호를 입력해주세요.</span>
+        </section>
         <label id="studentAccountLabel">학생 계정
           <select id="studentAccountSelect"></select>
         </label>
@@ -1871,7 +1898,7 @@ select[multiple] {
           </section>
         </div>
 
-        <section class="panel">
+        <section class="panel" id="studentFormPanel">
           <div class="panel-head">
             <div>
               <p class="eyebrow">Monthly Log</p>
@@ -1913,8 +1940,10 @@ select[multiple] {
           </div>
           <div class="button-row">
             <button class="primary" id="addStudentButton">학생 추가</button>
+            <button class="ghost hidden" id="cancelStudentEditButton" type="button">수정 취소</button>
             <button class="danger" id="deleteStudentButton">선택 학생 삭제</button>
           </div>
+          <p class="edit-note" id="studentEditNote">학생 정보를 수정하는 중입니다.</p>
         </section>
         <div class="student-list" id="studentList"></div>
       </section>
@@ -2270,6 +2299,7 @@ select[multiple] {
     const ACCOUNT_STORAGE_KEY = "seula-learning-dashboard-account-v1";
     const SUPABASE_CONFIG_STORAGE_KEY = "seula-learning-dashboard-supabase-v1";
     const STUDENT_PIN_STORAGE_KEY = "seula-learning-dashboard-student-pin-v1";
+    const TEACHER_ACCESS_CODE = "0324";
     const SUPABASE_CONFIG = {
       url: "",
       anonKey: ""
@@ -2349,13 +2379,16 @@ select[multiple] {
     };
 
     let data = loadData();
-    let accountState = loadAccountState();
-    let studentPinSession = loadStudentPinSession();
+    let accountState = { role: "student", studentId: "" };
+    let studentPinSession = { studentId: "", accessCode: "" };
+    let teacherPinUnlocked = false;
+    let teacherPinRequested = false;
     let selectedMonth = currentMonth;
     let selectedStudentId = data.students[0]?.id || "";
     let dashboardDate = todayString();
     let dashboardSearch = "";
     let editingState = { type: "", index: -1 };
+    let studentEditId = "";
     let counselingEditIndex = -1;
     let supabaseConfig = loadSupabaseConfig();
     let supabaseClient = null;
@@ -2680,7 +2713,8 @@ select[multiple] {
       $("#studentAccountSelect").innerHTML = data.students.map((item) => `<option value="${item.id}">${item.name} (${item.grade || "-"})</option>`).join("");
       $("#studentAccountSelect").value = accountState.studentId || selectedStudentId;
       $("#studentAccountLabel").classList.add("hidden");
-      $("#studentPinPanel").classList.toggle("hidden", isTeacherAccount());
+      $("#teacherPinPanel").classList.toggle("hidden", isTeacherAccount() || !teacherPinRequested);
+      $("#studentPinPanel").classList.toggle("hidden", isTeacherAccount() || teacherPinRequested);
       $("#studentPinStatus").textContent = !isTeacherAccount() && studentPinSession.studentId
         ? `${student()?.name || "학생"} 접속 중`
         : "4자리 번호를 입력해주세요.";
@@ -3201,17 +3235,113 @@ select[multiple] {
       }).join("");
     }
 
+    function setStudentEditMessage(message, active = true) {
+      const note = $("#studentEditNote");
+      note.textContent = message;
+      note.classList.toggle("active", active);
+    }
+
+    function clearStudentForm() {
+      ["#newName", "#newSchool", "#newGrade", "#newDays", "#newAccessCode"].forEach((selector) => {
+        $(selector).value = "";
+      });
+    }
+
+    function resetStudentEdit() {
+      studentEditId = "";
+      clearStudentForm();
+      $("#addStudentButton").textContent = "학생 추가";
+      $("#cancelStudentEditButton").classList.add("hidden");
+      $("#studentFormPanel").classList.remove("editing");
+      setStudentEditMessage("학생 정보를 수정하는 중입니다.", false);
+      renderStudents();
+    }
+
+    function editStudent(studentId) {
+      const target = data.students.find((item) => item.id === studentId);
+      if (!target) return;
+      studentEditId = target.id;
+      selectedStudentId = target.id;
+      accountState.studentId = target.id;
+      saveAccountState();
+      $("#newName").value = target.name || "";
+      $("#newSchool").value = target.school === "-" ? "" : target.school || "";
+      $("#newGrade").value = target.grade === "-" ? "" : target.grade || "";
+      $("#newDays").value = target.days === "-" ? "" : target.days || "";
+      $("#newAccessCode").value = target.accessCode || "";
+      $("#addStudentButton").textContent = "학생 정보 수정 저장";
+      $("#cancelStudentEditButton").classList.remove("hidden");
+      $("#studentFormPanel").classList.add("editing");
+      setStudentEditMessage(`${target.name} 학생 정보를 수정하는 중입니다.`);
+      renderSelectors();
+      renderStudents();
+      $("#studentFormPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function saveStudent() {
+      const name = $("#newName").value.trim();
+      const rawAccessCode = $("#newAccessCode").value.trim();
+      const accessCode = normalizeAccessCode(rawAccessCode);
+      if (!name) {
+        setStudentEditMessage("학생 이름을 입력해주세요.");
+        $("#newName").focus();
+        return;
+      }
+      if (rawAccessCode && !accessCode) {
+        setStudentEditMessage("접속번호는 숫자 4자리로 입력해주세요.");
+        $("#newAccessCode").focus();
+        return;
+      }
+      const duplicate = accessCode && data.students.some((item) => item.id !== studentEditId && normalizeAccessCode(item.accessCode) === accessCode);
+      if (duplicate) {
+        setStudentEditMessage("이미 다른 학생이 사용 중인 접속번호입니다.");
+        $("#newAccessCode").focus();
+        return;
+      }
+
+      const values = {
+        name,
+        school: $("#newSchool").value.trim() || "-",
+        grade: $("#newGrade").value.trim() || "-",
+        days: $("#newDays").value.trim() || "-",
+        accessCode: accessCode || generateAccessCode()
+      };
+
+      if (studentEditId) {
+        const target = data.students.find((item) => item.id === studentEditId);
+        if (!target) return;
+        Object.assign(target, values);
+        selectedStudentId = target.id;
+      } else {
+        const newStudent = { id: uid("stu"), ...values };
+        data.students.push(newStudent);
+        selectedStudentId = newStudent.id;
+      }
+
+      accountState.studentId = selectedStudentId;
+      saveAccountState();
+      studentEditId = "";
+      clearStudentForm();
+      $("#addStudentButton").textContent = "학생 추가";
+      $("#cancelStudentEditButton").classList.add("hidden");
+      $("#studentFormPanel").classList.remove("editing");
+      setStudentEditMessage("학생 정보를 수정하는 중입니다.", false);
+      saveData();
+      renderAll();
+    }
+
     function renderStudents() {
       $("#studentList").innerHTML = data.students.map((item) => {
         const summary = summaryFor(item.id);
         return `
-          <article class="student-row">
+          <article class="student-row ${studentEditId === item.id ? "editing" : ""}">
             <div>
               <strong>${item.name}</strong>
               <span>${item.school} · ${item.grade} · ${item.days} · 접속번호 ${item.accessCode || "미설정"}</span>
             </div>
-            <div>
+            <div class="student-row-actions">
               <span class="${summary.risk ? "status risk" : "status"}">${summary.risk ? "확인 필요" : "안정권"}</span>
+              <button class="tiny-button" type="button" data-student-edit="${item.id}">수정</button>
             </div>
           </article>
         `;
@@ -3595,8 +3725,10 @@ select[multiple] {
       }
 
       currentProfile = profile;
-      accountState.role = profile.role || "student";
-      if (profile.student_id) {
+      if (profile.role !== "teacher" || teacherPinUnlocked) {
+        accountState.role = profile.role || "student";
+      }
+      if (profile.student_id && profile.role !== "teacher") {
         accountState.studentId = profile.student_id;
         selectedStudentId = profile.student_id;
       }
@@ -3772,6 +3904,55 @@ select[multiple] {
         console.error(error);
         setSupabaseStatus(`로그인 실패: ${supabaseErrorMessage(error)}`, "warn");
       }
+    }
+
+    function requestTeacherMode() {
+      if (isTeacherAccount()) return;
+      teacherPinRequested = true;
+      $("#teacherPinStatus").textContent = "선생님 번호를 입력해주세요.";
+      syncAccountUi();
+      requestAnimationFrame(() => $("#teacherPinInput").focus());
+    }
+
+    function cancelTeacherMode() {
+      teacherPinRequested = false;
+      $("#teacherPinInput").value = "";
+      syncAccountUi();
+    }
+
+    function unlockTeacherMode() {
+      const code = normalizeAccessCode($("#teacherPinInput").value);
+      if (code !== TEACHER_ACCESS_CODE) {
+        $("#teacherPinStatus").textContent = "선생님 번호가 맞지 않아요.";
+        $("#teacherPinInput").select();
+        return;
+      }
+
+      teacherPinUnlocked = true;
+      teacherPinRequested = false;
+      clearStudentPinSession();
+      selectedStudentId = data.students[0]?.id || "";
+      accountState = { role: "teacher", studentId: selectedStudentId };
+      saveAccountState();
+      $("#teacherPinInput").value = "";
+      resetEditState();
+      resetCounselingEdit();
+      renderAll();
+      activateView("dashboardView");
+      if (supabaseUser) loadRemoteData().catch((error) => console.error(error));
+    }
+
+    function returnToStudentMode() {
+      teacherPinUnlocked = false;
+      teacherPinRequested = false;
+      clearStudentPinSession();
+      selectedStudentId = "";
+      accountState = { role: "student", studentId: "" };
+      saveAccountState();
+      resetEditState();
+      resetCounselingEdit();
+      renderAll();
+      activateView("studentPortalView");
     }
 
     async function loadStudentByPin(accessCode) {
@@ -4905,17 +5086,19 @@ select[multiple] {
 
       $$("[data-role-switch]").forEach((button) => {
         button.addEventListener("click", () => {
-          accountState.role = button.dataset.roleSwitch;
-          if (!accountState.studentId) accountState.studentId = selectedStudentId || data.students[0]?.id || "";
-          if (!isTeacherAccount()) {
-            if (studentPinSession.studentId) selectedStudentId = studentPinSession.studentId;
-          }
-          saveAccountState();
-          resetEditState();
-          resetCounselingEdit();
-          renderAll();
-          activateView(defaultViewForRole());
+          if (button.dataset.roleSwitch === "teacher") requestTeacherMode();
+          else returnToStudentMode();
         });
+      });
+
+      $("#teacherPinLoginButton").addEventListener("click", unlockTeacherMode);
+      $("#teacherPinCancelButton").addEventListener("click", cancelTeacherMode);
+      $("#teacherPinInput").addEventListener("input", (event) => {
+        event.target.value = event.target.value.replace(/\D/g, "").slice(0, 4);
+      });
+      $("#teacherPinInput").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") unlockTeacherMode();
+        if (event.key === "Escape") cancelTeacherMode();
       });
 
       $("#studentAccountSelect").addEventListener("change", (event) => {
@@ -5013,31 +5196,29 @@ select[multiple] {
         });
       });
 
-      $("#addStudentButton").addEventListener("click", () => {
-        const name = $("#newName").value.trim();
-        if (!name) return;
-        const newStudent = {
-          id: uid("stu"),
-          name,
-          school: $("#newSchool").value.trim() || "-",
-          grade: $("#newGrade").value.trim() || "-",
-          days: $("#newDays").value.trim() || "-",
-          accessCode: normalizeAccessCode($("#newAccessCode").value) || generateAccessCode()
-        };
-        data.students.push(newStudent);
-        selectedStudentId = newStudent.id;
-        $("#newAccessCode").value = "";
-        saveData();
-        renderAll();
+      $("#addStudentButton").addEventListener("click", saveStudent);
+      $("#cancelStudentEditButton").addEventListener("click", resetStudentEdit);
+      $("#studentList").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-student-edit]");
+        if (button) editStudent(button.dataset.studentEdit);
+      });
+      $("#newAccessCode").addEventListener("input", (event) => {
+        event.target.value = event.target.value.replace(/\D/g, "").slice(0, 4);
       });
 
       $("#deleteStudentButton").addEventListener("click", () => {
         if (!selectedStudentId) return;
+        studentEditId = "";
         data.students = data.students.filter((item) => item.id !== selectedStudentId);
         ["monthlyTests", "wordTests", "progressLogs", "counselingRecords", "observations", "dailyStatuses"].forEach((key) => {
           data[key] = data[key].filter((item) => item.studentId !== selectedStudentId);
         });
         selectedStudentId = data.students[0]?.id || "";
+        clearStudentForm();
+        $("#addStudentButton").textContent = "학생 추가";
+        $("#cancelStudentEditButton").classList.add("hidden");
+        $("#studentFormPanel").classList.remove("editing");
+        setStudentEditMessage("학생 정보를 수정하는 중입니다.", false);
         saveData();
         renderAll();
       });
