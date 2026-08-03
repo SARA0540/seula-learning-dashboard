@@ -307,6 +307,9 @@ select[multiple] {
   padding: 0 36px 0 11px;
   text-align: left;
   font-weight: 850;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .unit-picker-button::after {
@@ -347,6 +350,10 @@ select[multiple] {
   color: var(--ink);
   font-size: 13px;
   font-weight: 800;
+}
+
+.unit-picker-option span {
+  overflow-wrap: anywhere;
 }
 
 .unit-picker-option input {
@@ -911,6 +918,38 @@ select[multiple] {
     .book-card strong {
       display: block;
       margin-bottom: 3px;
+    }
+
+    .outline-manager {
+      margin-top: 12px;
+    }
+
+    .outline-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .outline-row {
+      display: grid;
+      grid-template-columns: minmax(150px, 0.9fr) minmax(220px, 1.6fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfa;
+    }
+
+    .outline-row strong,
+    .outline-row span {
+      overflow-wrap: anywhere;
+    }
+
+    .outline-row-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
     }
 
     .student-list {
@@ -1530,6 +1569,14 @@ select[multiple] {
         grid-template-columns: 1fr;
       }
 
+      .outline-row {
+        grid-template-columns: 1fr;
+      }
+
+      .outline-row-actions {
+        justify-content: flex-start;
+      }
+
       body[data-account-role="student"] .sidebar {
         padding: 14px 16px;
         align-items: stretch;
@@ -2096,7 +2143,7 @@ select[multiple] {
                 </select>
               </label>
               <label>교재명<input id="newBookName" type="text" placeholder="예: Subject Links L3"></label>
-              <label>단원<input id="newBookChapter" type="text" placeholder="예: Chapter 01 / Level 3"></label>
+              <label>레벨/권<input id="newBookChapter" type="text" placeholder="예: Level 3 / Basic 1"></label>
               <label>전체 Unit 수<input id="newBookUnits" type="number" min="1" value="12"></label>
             </div>
             <div class="button-row">
@@ -2132,6 +2179,28 @@ select[multiple] {
           </section>
         </div>
 
+        <section class="panel outline-manager" id="bookOutlinePanel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Contents</p>
+              <h2>챕터·유닛 이름 관리</h2>
+            </div>
+          </div>
+          <div class="form-grid">
+            <label>교재 선택<select id="outlineBook"></select></label>
+            <label>챕터 번호<input id="outlineChapterCode" type="text" placeholder="예: Chapter 01"></label>
+            <label>챕터명<input id="outlineChapterName" type="text" placeholder="예: 명사와 관사"></label>
+            <label>유닛 번호<input id="outlineUnitCode" type="text" placeholder="예: Unit 1"></label>
+            <label>유닛명<input id="outlineUnitName" type="text" placeholder="예: 셀 수 있는 명사"></label>
+          </div>
+          <div class="button-row">
+            <button class="primary" id="saveOutlineButton" type="button">목차 추가</button>
+            <button class="ghost hidden" id="cancelOutlineEditButton" type="button">수정 취소</button>
+          </div>
+          <p class="save-note">초등 교재는 챕터 입력을 비워두고 유닛 번호와 이름만 등록해도 됩니다.</p>
+          <div class="outline-list" id="bookOutlineList"></div>
+        </section>
+
         <section class="panel">
           <div class="panel-head">
             <div>
@@ -2145,8 +2214,9 @@ select[multiple] {
                 <tr>
                   <th>구분</th>
                   <th>교재명</th>
-                  <th>단원</th>
+                  <th>레벨/권</th>
                   <th>전체유닛수</th>
+                  <th>목차 등록</th>
                   <th>사용 기록</th>
                   <th>관리</th>
                 </tr>
@@ -2308,6 +2378,7 @@ select[multiple] {
     const MONTHLY_REPORT_SECTIONS = ["독해", "문법"];
     const BOOK_CATEGORIES = ["독해", "문법", "단어", "듣기"];
     const BOOK_LINKED_PROGRESS_CATEGORIES = ["독해", "듣기"];
+    const BOOK_OUTLINE_PREFIX = "__SEULA_BOOK_OUTLINE_V1__";
 
     const seedData = {
       students: [
@@ -2390,6 +2461,7 @@ select[multiple] {
     let editingState = { type: "", index: -1 };
     let studentEditId = "";
     let counselingEditIndex = -1;
+    let outlineEditId = "";
     let supabaseConfig = loadSupabaseConfig();
     let supabaseClient = null;
     let supabaseUser = null;
@@ -2424,13 +2496,18 @@ select[multiple] {
         dailyStatuses: Array.isArray(source.dailyStatuses) ? source.dailyStatuses : []
       };
 
-      normalized.textbooks = normalized.textbooks.map((book, index) => ({
-        id: book.id || uid("book"),
-        category: BOOK_CATEGORIES.includes(book.category) ? book.category : inferCategoryFromText(book.name),
-        name: book.name || `교재 ${index + 1}`,
-        chapter: book.chapter || "기본",
-        totalUnits: Math.max(1, Number(book.totalUnits) || 1)
-      }));
+      normalized.textbooks = normalized.textbooks.map((book, index) => {
+        const stored = decodeBookChapter(book.chapter);
+        const outline = normalizeBookOutline(book.outline || stored.outline);
+        return {
+          id: book.id || uid("book"),
+          category: BOOK_CATEGORIES.includes(book.category) ? book.category : inferCategoryFromText(book.name),
+          name: book.name || `교재 ${index + 1}`,
+          chapter: stored.chapter || "기본",
+          totalUnits: Math.max(1, Number(book.totalUnits) || outline.length || 1),
+          outline
+        };
+      });
 
       normalized.students = normalized.students.map((student, index) => ({
         ...student,
@@ -2844,6 +2921,60 @@ select[multiple] {
       return BOOK_LINKED_PROGRESS_CATEGORIES.includes(category);
     }
 
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function normalizeBookOutline(value) {
+      if (!Array.isArray(value)) return [];
+      return value.map((item, index) => ({
+        id: item?.id || `outline-${index + 1}`,
+        chapterCode: String(item?.chapterCode || "").trim(),
+        chapterName: String(item?.chapterName || "").trim(),
+        unitCode: String(item?.unitCode || `Unit ${index + 1}`).trim(),
+        unitName: String(item?.unitName || "").trim()
+      })).filter((item) => item.unitCode || item.unitName);
+    }
+
+    function decodeBookChapter(value) {
+      const raw = String(value || "");
+      if (!raw.startsWith(BOOK_OUTLINE_PREFIX)) return { chapter: raw || "기본", outline: [] };
+      try {
+        const parsed = JSON.parse(raw.slice(BOOK_OUTLINE_PREFIX.length));
+        return { chapter: parsed.chapter || "기본", outline: normalizeBookOutline(parsed.outline) };
+      } catch (error) {
+        return { chapter: "기본", outline: [] };
+      }
+    }
+
+    function encodeBookChapter(book) {
+      if (!book?.outline?.length) return book?.chapter || null;
+      return `${BOOK_OUTLINE_PREFIX}${JSON.stringify({ chapter: book.chapter || "기본", outline: book.outline })}`;
+    }
+
+    function outlineItemLabel(item) {
+      if (!item) return "";
+      const chapter = [item.chapterCode, item.chapterName].filter(Boolean).join(" ");
+      const unit = [item.unitCode, item.unitName].filter(Boolean).join(" ");
+      return [chapter, unit].filter(Boolean).join(" · ");
+    }
+
+    function bookUnitLabel(book, unit) {
+      const item = book?.outline?.[Number(unit) - 1];
+      return item ? outlineItemLabel(item) : `Unit ${String(unit).padStart(2, "0")}`;
+    }
+
+    function bookUnitsLabel(book, units) {
+      const normalized = normalizeUnits(units);
+      if (!normalized.length) return "";
+      return normalized.map((unit) => bookUnitLabel(book, unit)).join(", ");
+    }
+
     function extractUnit(value) {
       const match = String(value || "").match(/unit\s*0*(\d+)/i);
       return match ? Number(match[1]) : 0;
@@ -2924,7 +3055,7 @@ select[multiple] {
     function lessonLabel(record) {
       const book = textbookById(record?.bookId);
       const units = unitsForRecord(record);
-      if (book && units.length) return `${textbookLabel(book)} ${unitListLabel(units)}`;
+      if (book && units.length) return `${textbookLabel(book)} ${bookUnitsLabel(book, units)}`;
       if (book) return textbookLabel(book);
       if (record?.manualLesson) return `[${record.category || "수기"}] ${record.manualLesson}`;
       return record?.lesson || "-";
@@ -2948,7 +3079,7 @@ select[multiple] {
     function reportLessonLabel(record) {
       const book = textbookById(record?.bookId);
       const units = unitsForRecord(record);
-      if (book && units.length) return `${reportTextbookLabel(book)} ${unitListLabel(units)}`;
+      if (book && units.length) return `${reportTextbookLabel(book)} ${bookUnitsLabel(book, units)}`;
       if (book) return reportTextbookLabel(book);
       return String(record?.manualLesson || record?.lesson || "-").replace(/^\[[^\]]+\]\s*/, "").replace(/\s*·\s*/g, " ");
     }
@@ -3532,7 +3663,7 @@ select[multiple] {
           id: item.id,
           category: item.category,
           name: item.name,
-          chapter: item.chapter || null,
+          chapter: encodeBookChapter(item),
           total_units: Number(item.totalUnits) || 1
         })),
         monthly_tests: data.monthlyTests.map((item) => ({
@@ -4527,7 +4658,7 @@ select[multiple] {
       $("#progressUnitMenu").innerHTML = units.map((unit) => `
         <label class="unit-picker-option">
           <input type="checkbox" value="${unit}" ${target.includes(unit) ? "checked" : ""}>
-          <span>Unit ${String(unit).padStart(2, "0")}</span>
+          <span>${escapeHtml(bookUnitLabel(book, unit))}</span>
         </label>
       `).join("");
       updateProgressUnitButton();
@@ -4539,27 +4670,40 @@ select[multiple] {
 
     function updateProgressUnitButton() {
       const units = selectedProgressUnits();
-      $("#progressUnitButton").textContent = units.length ? unitListLabel(units) : "Unit 선택";
+      const book = textbookById($("#progressBook").value);
+      $("#progressUnitButton").textContent = units.length && book ? bookUnitsLabel(book, units) : "Unit 선택";
     }
 
     function renderBookManagement() {
+      const previousOutlineBookId = $("#outlineBook")?.value || "";
       $("#bookTable").innerHTML = data.textbooks.length
         ? sortedTextbooks().map((book) => {
           const usage = data.progressLogs.filter((log) => log.bookId === book.id).length;
           return `
             <tr>
               <td><span class="status">${book.category}</span></td>
-              <td><strong>${book.name}</strong></td>
-              <td>${book.chapter}</td>
+              <td><strong>${escapeHtml(book.name)}</strong></td>
+              <td>${escapeHtml(book.chapter)}</td>
               <td>${book.totalUnits}개</td>
+              <td>${book.outline.length}개</td>
               <td>${usage}회</td>
               <td>
+                <button class="tiny-button" type="button" data-book-outline="${book.id}">목차 관리</button>
                 <button class="tiny-button danger-text" type="button" data-book-delete="${book.id}">삭제</button>
               </td>
             </tr>
           `;
         }).join("")
-        : `<tr><td colspan="6">등록된 교재가 없습니다.</td></tr>`;
+        : `<tr><td colspan="7">등록된 교재가 없습니다.</td></tr>`;
+
+      const books = sortedTextbooks();
+      $("#outlineBook").innerHTML = books.length
+        ? books.map((book) => `<option value="${book.id}">${escapeHtml(book.category)} · ${escapeHtml(book.name)} · ${escapeHtml(book.chapter)}</option>`).join("")
+        : `<option value="">등록된 교재 없음</option>`;
+      $("#outlineBook").value = books.some((book) => book.id === previousOutlineBookId)
+        ? previousOutlineBookId
+        : books[0]?.id || "";
+      renderBookOutline();
 
       const active = student();
       $("#bookProgressList").innerHTML = data.textbooks.length
@@ -4579,6 +4723,36 @@ select[multiple] {
           `;
         }).join("")
         : `<div class="empty">교재를 먼저 등록해주세요.</div>`;
+    }
+
+    function resetOutlineForm() {
+      outlineEditId = "";
+      $("#outlineChapterCode").value = "";
+      $("#outlineChapterName").value = "";
+      $("#outlineUnitCode").value = "";
+      $("#outlineUnitName").value = "";
+      $("#saveOutlineButton").textContent = "목차 추가";
+      $("#cancelOutlineEditButton").classList.add("hidden");
+    }
+
+    function renderBookOutline() {
+      const book = textbookById($("#outlineBook")?.value);
+      if (!book) {
+        $("#bookOutlineList").innerHTML = `<div class="empty">교재를 먼저 등록해주세요.</div>`;
+        return;
+      }
+      $("#bookOutlineList").innerHTML = book.outline.length
+        ? book.outline.map((item, index) => `
+          <article class="outline-row">
+            <strong>${escapeHtml([item.chapterCode, item.chapterName].filter(Boolean).join(" ") || "챕터 없음")}</strong>
+            <span>${escapeHtml([item.unitCode, item.unitName].filter(Boolean).join(" "))}</span>
+            <span class="outline-row-actions">
+              <button class="tiny-button" type="button" data-outline-edit="${item.id}">수정</button>
+              <button class="tiny-button danger-text" type="button" data-outline-delete="${item.id}">삭제</button>
+            </span>
+          </article>
+        `).join("")
+        : `<div class="empty">아직 등록된 챕터·유닛 이름이 없습니다.</div>`;
     }
 
     function renderAll() {
@@ -4678,7 +4852,7 @@ select[multiple] {
           bookId: book?.id || "",
           unit,
           units,
-          lesson: book && units.length ? `${textbookLabel(book)} ${unitListLabel(units)}` : "-",
+          lesson: book && units.length ? `${textbookLabel(book)} ${bookUnitsLabel(book, units)}` : "-",
           manualLesson: "",
           homework: $("#progressHomework").value,
           memo: $("#progressMemo").value || "-"
@@ -5027,11 +5201,11 @@ select[multiple] {
 
     function downloadBookTemplate() {
       const sampleRows = [
-        ["구분", "교재명", "단원", "전체유닛수"],
-        ["독해", "Subject Links L3", "Unit Book", "12"],
-        ["문법", "Grammar Space", "Basic", "10"],
-        ["단어", "Word Master", "Day 01-30", "30"],
-        ["듣기", "Listening Juice", "Level 4", "12"]
+        ["구분", "교재명", "레벨/권", "전체유닛수", "챕터 번호", "챕터명", "유닛 번호", "유닛명"],
+        ["문법", "중등 문법 예시", "Basic 1", "10", "Chapter 01", "명사와 관사", "Unit 1", "셀 수 있는 명사"],
+        ["문법", "중등 문법 예시", "Basic 1", "10", "Chapter 01", "명사와 관사", "Unit 2", "셀 수 없는 명사"],
+        ["문법", "중등 문법 예시", "Basic 1", "10", "Chapter 02", "대명사", "Unit 1", "지시대명사"],
+        ["독해", "Subject Links L3", "Level 3", "12", "", "", "Unit 1", "People and Places"]
       ];
       const csv = `\uFEFF${sampleRows.map((row) => row.map(csvEscape).join(",")).join("\n")}`;
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -5051,10 +5225,11 @@ select[multiple] {
       const headers = rows[0].map(normalizedHeader);
       let added = 0;
       let skipped = 0;
+      const grouped = new Map();
       rows.slice(1).forEach((row) => {
         const rawCategory = bookValueByHeaders(row, headers, ["구분", "분류", "category"]);
         const name = bookValueByHeaders(row, headers, ["교재명", "교재", "name"]).trim();
-        const chapter = bookValueByHeaders(row, headers, ["단원", "chapter"]).trim() || "기본";
+        const chapter = bookValueByHeaders(row, headers, ["레벨/권", "단원", "level", "chapter"]).trim() || "기본";
         const totalUnits = Number(bookValueByHeaders(row, headers, ["전체유닛수", "전체unit수", "전체unit", "totalUnits", "units"]));
         const category = BOOK_CATEGORIES.includes(rawCategory) ? rawCategory : inferCategoryFromText(`${rawCategory} ${name}`);
 
@@ -5062,15 +5237,33 @@ select[multiple] {
           skipped += 1;
           return;
         }
+        const key = `${category}\u0000${name}\u0000${chapter}`;
+        if (!grouped.has(key)) grouped.set(key, { category, name, chapter, totalUnits: Math.round(totalUnits), outline: [] });
+        const unitCode = bookValueByHeaders(row, headers, ["유닛번호", "unit번호", "unit", "unitcode"]).trim();
+        const unitName = bookValueByHeaders(row, headers, ["유닛명", "unit명", "unitname"]).trim();
+        if (unitCode || unitName) {
+          grouped.get(key).outline.push({
+            id: uid("outline"),
+            chapterCode: bookValueByHeaders(row, headers, ["챕터번호", "chapter번호", "chaptercode"]).trim(),
+            chapterName: bookValueByHeaders(row, headers, ["챕터명", "chapter명", "chaptername"]).trim(),
+            unitCode: unitCode || `Unit ${grouped.get(key).outline.length + 1}`,
+            unitName
+          });
+        }
+      });
 
-        data.textbooks.push({
-          id: uid("book"),
-          category,
-          name,
-          chapter,
-          totalUnits: Math.round(totalUnits)
-        });
-        added += 1;
+      grouped.forEach((incoming) => {
+        const existing = data.textbooks.find((book) => book.category === incoming.category && book.name === incoming.name && book.chapter === incoming.chapter);
+        if (existing) {
+          existing.totalUnits = Math.max(existing.totalUnits, incoming.totalUnits, incoming.outline.length);
+          incoming.outline.forEach((item) => {
+            const duplicate = existing.outline.some((entry) => entry.chapterCode === item.chapterCode && entry.unitCode === item.unitCode);
+            if (!duplicate) existing.outline.push(item);
+          });
+        } else {
+          data.textbooks.push({ id: uid("book"), ...incoming, totalUnits: Math.max(incoming.totalUnits, incoming.outline.length) });
+          added += 1;
+        }
       });
 
       saveData();
@@ -5256,11 +5449,66 @@ select[multiple] {
         const chapter = $("#newBookChapter").value.trim() || "기본";
         const totalUnits = Number($("#newBookUnits").value);
         if (!name || !Number.isFinite(totalUnits) || totalUnits < 1) return;
-        data.textbooks.push({ id: uid("book"), category, name, chapter, totalUnits: Math.round(totalUnits) });
+        data.textbooks.push({ id: uid("book"), category, name, chapter, totalUnits: Math.round(totalUnits), outline: [] });
         $("#newBookName").value = "";
         $("#newBookChapter").value = "";
         saveData();
         renderAll();
+      });
+
+      $("#outlineBook").addEventListener("change", () => {
+        resetOutlineForm();
+        renderBookOutline();
+      });
+
+      $("#saveOutlineButton").addEventListener("click", () => {
+        const book = textbookById($("#outlineBook").value);
+        const unitCode = $("#outlineUnitCode").value.trim();
+        const unitName = $("#outlineUnitName").value.trim();
+        if (!book || (!unitCode && !unitName)) {
+          window.alert("유닛 번호나 유닛 이름을 입력해주세요.");
+          return;
+        }
+        const item = {
+          id: outlineEditId || uid("outline"),
+          chapterCode: $("#outlineChapterCode").value.trim(),
+          chapterName: $("#outlineChapterName").value.trim(),
+          unitCode: unitCode || `Unit ${book.outline.length + 1}`,
+          unitName
+        };
+        const editIndex = book.outline.findIndex((entry) => entry.id === outlineEditId);
+        if (editIndex >= 0) book.outline[editIndex] = item;
+        else book.outline.push(item);
+        book.totalUnits = Math.max(book.totalUnits, book.outline.length);
+        resetOutlineForm();
+        saveData();
+        renderAll();
+      });
+
+      $("#cancelOutlineEditButton").addEventListener("click", resetOutlineForm);
+
+      $("#bookOutlineList").addEventListener("click", (event) => {
+        const book = textbookById($("#outlineBook").value);
+        if (!book) return;
+        const editButton = event.target.closest("button[data-outline-edit]");
+        const deleteButton = event.target.closest("button[data-outline-delete]");
+        if (editButton) {
+          const item = book.outline.find((entry) => entry.id === editButton.dataset.outlineEdit);
+          if (!item) return;
+          outlineEditId = item.id;
+          $("#outlineChapterCode").value = item.chapterCode;
+          $("#outlineChapterName").value = item.chapterName;
+          $("#outlineUnitCode").value = item.unitCode;
+          $("#outlineUnitName").value = item.unitName;
+          $("#saveOutlineButton").textContent = "목차 수정 저장";
+          $("#cancelOutlineEditButton").classList.remove("hidden");
+        }
+        if (deleteButton) {
+          book.outline = book.outline.filter((entry) => entry.id !== deleteButton.dataset.outlineDelete);
+          resetOutlineForm();
+          saveData();
+          renderAll();
+        }
       });
 
       $("#downloadBookTemplateButton").addEventListener("click", downloadBookTemplate);
@@ -5277,6 +5525,14 @@ select[multiple] {
       });
 
       $("#bookTable").addEventListener("click", (event) => {
+        const outlineButton = event.target.closest("button[data-book-outline]");
+        if (outlineButton) {
+          $("#outlineBook").value = outlineButton.dataset.bookOutline;
+          resetOutlineForm();
+          renderBookOutline();
+          $("#bookOutlinePanel").scrollIntoView({ behavior: "smooth", block: "start" });
+          return;
+        }
         const button = event.target.closest("button[data-book-delete]");
         if (!button) return;
         const bookId = button.dataset.bookDelete;
