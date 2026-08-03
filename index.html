@@ -1070,20 +1070,25 @@ select[multiple] {
       vertical-align: middle;
       word-break: keep-all;
       overflow-wrap: anywhere;
+      white-space: normal;
+      line-height: 1.28;
     }
 
     .progress-report-table .date-cell {
-      width: 76px;
-      white-space: nowrap;
+      white-space: normal;
     }
 
     .progress-report-table .word-range-cell {
-      width: 132px;
-      white-space: nowrap;
+      white-space: normal;
     }
 
     .progress-report-table .word-score-cell {
-      width: 42px;
+      white-space: nowrap;
+    }
+
+    .progress-report-table .test-cell {
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
 
     .progress-report-table .lesson-cell {
@@ -4497,7 +4502,7 @@ select[multiple] {
             <td class="lesson-cell">${readingProgress}</td>
             <td>${readingWords}</td>
             <td class="lesson-cell">${grammarProgress}</td>
-            <td>${testProgress}</td>
+            <td class="test-cell">${testProgress}</td>
           </tr>
         `;
       }).join("");
@@ -4556,6 +4561,16 @@ select[multiple] {
 
         <div class="report-section-title">수업진도</div>
         <table class="score-table progress-report-table">
+          <colgroup>
+            <col style="width:7%">
+            <col style="width:22%">
+            <col style="width:4.5%">
+            <col style="width:4.5%">
+            <col style="width:24%">
+            <col style="width:9%">
+            <col style="width:22%">
+            <col style="width:7%">
+          </colgroup>
           <thead>
             <tr>
               <th class="date-cell">Date</th>
@@ -4564,7 +4579,7 @@ select[multiple] {
               <th>독해진도</th>
               <th>독해단어</th>
               <th>문법진도</th>
-              <th>TEST</th>
+              <th class="test-cell">TEST</th>
             </tr>
           </thead>
           <tbody>${progressRows || `<tr><td colspan="8">진도 입력이 필요합니다.</td></tr>`}${monthlyProgressRow}</tbody>
