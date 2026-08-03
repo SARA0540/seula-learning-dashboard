@@ -1100,6 +1100,46 @@ select[multiple] {
       font-weight: 900;
     }
 
+    .report-book-table {
+      table-layout: fixed;
+      margin-bottom: 10px;
+      font-size: 10.5px;
+    }
+
+    .report-book-table th,
+    .report-book-table td {
+      padding: 4px 6px;
+      vertical-align: middle;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+    }
+
+    .report-book-progress {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 34px;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .report-book-meter {
+      height: 6px;
+      overflow: hidden;
+      border-radius: 3px;
+      background: #e4e9e5;
+    }
+
+    .report-book-meter span {
+      display: block;
+      height: 100%;
+      background: var(--brand-2);
+    }
+
+    .report-book-percent {
+      font-weight: 900;
+      text-align: right;
+      white-space: nowrap;
+    }
+
     .report-section-title {
       margin: 13px 0 8px;
       font-size: 13px;
@@ -1311,6 +1351,16 @@ select[multiple] {
 
     .report-card.one-page-export .progress-report-table {
       font-size: 9px;
+    }
+
+    .report-card.one-page-export .report-book-table {
+      margin-bottom: 6px;
+      font-size: 8.8px;
+    }
+
+    .report-card.one-page-export .report-book-table th,
+    .report-card.one-page-export .report-book-table td {
+      padding: 3px 4px;
     }
 
     .report-card.one-page-export .progress-report-table td {
@@ -3120,9 +3170,16 @@ select[multiple] {
     function textbookProgress(studentId, bookId) {
       const book = textbookById(bookId);
       if (!book) return { doneUnit: 0, totalUnits: 0, percent: 0 };
-      const doneUnit = Math.max(0, ...data.progressLogs
+      const progressUnits = data.progressLogs
         .filter((log) => log.studentId === studentId && log.bookId === bookId)
-        .flatMap((log) => unitsForRecord(log)));
+        .flatMap((log) => unitsForRecord(log));
+      const wordUnits = data.wordTests
+        .filter((test) => test.studentId === studentId && test.bookId === bookId)
+        .flatMap((test) => normalizeUnits([
+          test.unit,
+          ...(String(test.unitText || "").match(/\d+/g) || [])
+        ]));
+      const doneUnit = Math.max(0, ...progressUnits, ...wordUnits);
       const percentValue = Math.min(100, Math.round((doneUnit / book.totalUnits) * 100));
       return { doneUnit, totalUnits: book.totalUnits, percent: percentValue };
     }
@@ -4459,6 +4516,29 @@ select[multiple] {
         </tr>
       `;
 
+      const usedBookIds = [...new Set([
+        ...wordTests.map((item) => item.bookId),
+        ...progress.map((item) => item.bookId)
+      ].filter(Boolean))];
+      const reportBookRows = sortedTextbooks()
+        .filter((book) => usedBookIds.includes(book.id))
+        .map((book) => {
+          const bookProgress = textbookProgress(active.id, book.id);
+          return `
+            <tr>
+              <td>${escapeHtml(book.category)}</td>
+              <td>${escapeHtml(reportTextbookLabel(book))}</td>
+              <td>Unit ${bookProgress.doneUnit} / ${bookProgress.totalUnits}</td>
+              <td>
+                <div class="report-book-progress">
+                  <div class="report-book-meter"><span style="width:${bookProgress.percent}%"></span></div>
+                  <span class="report-book-percent">${bookProgress.percent}%</span>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join("");
+
       const wordColumns = wordTests.slice(-10).map((item) => {
         const scorePct = pct(item.score, item.max);
         return `<div class="column" style="height:${Math.max(4, scorePct)}%"><span>${item.score}</span></div>`;
@@ -4543,6 +4623,20 @@ select[multiple] {
             ${scoreRows}
             <tr><th>Average</th><th>-</th><th>${formatScore(reportMonthlyAvg)}</th><th>${formatScore(reportPreviousAvg)}</th></tr>
           </tbody>
+        </table>
+
+        <div class="report-section-title">사용 교재 및 진도율</div>
+        <table class="score-table report-book-table">
+          <colgroup>
+            <col style="width:12%">
+            <col style="width:43%">
+            <col style="width:20%">
+            <col style="width:25%">
+          </colgroup>
+          <thead>
+            <tr><th>구분</th><th>교재명</th><th>현재 진도</th><th>진도율</th></tr>
+          </thead>
+          <tbody>${reportBookRows || `<tr><td colspan="4">이번달 사용 교재 기록이 필요합니다.</td></tr>`}</tbody>
         </table>
 
         <div class="report-section-title">Detailed Evaluation</div>
