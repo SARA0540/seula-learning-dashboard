@@ -3211,7 +3211,7 @@ select[multiple] {
       if (!profile) {
         const profileInput = {
           id: supabaseUser.id,
-          role: accountState.role || "student",
+          role: "student",
           student_id: accountState.role === "student" ? accountState.studentId || selectedStudentId || null : null,
           display_name: supabaseUser.email
         };
