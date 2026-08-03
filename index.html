@@ -2131,13 +2131,14 @@ select[multiple] {
           </div>
         </div>
         <div class="grid-2">
-          <section class="panel">
+          <section class="panel" id="bookFormPanel">
             <div class="panel-head">
               <div>
                 <p class="eyebrow">Register</p>
                 <h2>교재 미리 등록</h2>
               </div>
             </div>
+            <p class="edit-note" id="bookEditNote">교재 정보를 수정하는 중입니다.</p>
             <div class="form-grid">
               <label>구분
                 <select id="newBookCategory">
@@ -2153,6 +2154,7 @@ select[multiple] {
             </div>
             <div class="button-row">
               <button class="primary" id="addBookButton">교재 등록</button>
+              <button class="ghost hidden" id="cancelBookEditButton" type="button">수정 취소</button>
             </div>
           </section>
 
@@ -2468,6 +2470,7 @@ select[multiple] {
     let editingState = { type: "", index: -1 };
     let studentEditId = "";
     let counselingEditIndex = -1;
+    let bookEditId = "";
     let outlineEditId = "";
     let supabaseConfig = loadSupabaseConfig();
     let supabaseClient = null;
@@ -4691,13 +4694,77 @@ select[multiple] {
       $("#progressUnitButton").textContent = units.length && book ? bookUnitsLabel(book, units) : "Unit 선택";
     }
 
+    function clearBookForm() {
+      $("#newBookCategory").value = "독해";
+      $("#newBookName").value = "";
+      $("#newBookChapter").value = "";
+      $("#newBookUnits").value = "12";
+    }
+
+    function resetBookEdit() {
+      bookEditId = "";
+      clearBookForm();
+      $("#addBookButton").textContent = "교재 등록";
+      $("#cancelBookEditButton").classList.add("hidden");
+      $("#bookFormPanel").classList.remove("editing");
+      $("#bookEditNote").classList.remove("active");
+      renderBookManagement();
+    }
+
+    function editBook(bookId) {
+      const book = textbookById(bookId);
+      if (!book) return;
+      bookEditId = book.id;
+      $("#newBookCategory").value = book.category;
+      $("#newBookName").value = book.name;
+      $("#newBookChapter").value = book.chapter === "기본" ? "" : book.chapter;
+      $("#newBookUnits").value = book.totalUnits;
+      $("#addBookButton").textContent = "교재 정보 수정 저장";
+      $("#cancelBookEditButton").classList.remove("hidden");
+      $("#bookFormPanel").classList.add("editing");
+      $("#bookEditNote").textContent = `${book.name} 교재 정보를 수정하는 중입니다.`;
+      $("#bookEditNote").classList.add("active");
+      renderBookManagement();
+      $("#bookFormPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function saveBook() {
+      const category = $("#newBookCategory").value;
+      const name = $("#newBookName").value.trim();
+      const chapter = $("#newBookChapter").value.trim() || "기본";
+      const totalUnits = Number($("#newBookUnits").value);
+      if (!name || !Number.isFinite(totalUnits) || totalUnits < 1) return;
+
+      if (bookEditId) {
+        const book = textbookById(bookEditId);
+        if (!book) return;
+        Object.assign(book, {
+          category,
+          name,
+          chapter,
+          totalUnits: Math.max(Math.round(totalUnits), book.outline.length)
+        });
+      } else {
+        data.textbooks.push({ id: uid("book"), category, name, chapter, totalUnits: Math.round(totalUnits), outline: [] });
+      }
+
+      bookEditId = "";
+      clearBookForm();
+      $("#addBookButton").textContent = "교재 등록";
+      $("#cancelBookEditButton").classList.add("hidden");
+      $("#bookFormPanel").classList.remove("editing");
+      $("#bookEditNote").classList.remove("active");
+      saveData();
+      renderAll();
+    }
+
     function renderBookManagement() {
       const previousOutlineBookId = $("#outlineBook")?.value || "";
       $("#bookTable").innerHTML = data.textbooks.length
         ? sortedTextbooks().map((book) => {
           const usage = data.progressLogs.filter((log) => log.bookId === book.id).length;
           return `
-            <tr>
+            <tr class="${bookEditId === book.id ? "editing" : ""}">
               <td><span class="status">${book.category}</span></td>
               <td><strong>${escapeHtml(book.name)}</strong></td>
               <td>${escapeHtml(book.chapter)}</td>
@@ -4705,6 +4772,7 @@ select[multiple] {
               <td>${book.outline.length}개</td>
               <td>${usage}회</td>
               <td>
+                <button class="tiny-button" type="button" data-book-edit="${book.id}">수정</button>
                 <button class="tiny-button" type="button" data-book-outline="${book.id}">목차 관리</button>
                 <button class="tiny-button danger-text" type="button" data-book-delete="${book.id}">삭제</button>
               </td>
@@ -5392,18 +5460,8 @@ select[multiple] {
       $("#cancelCounselingEditButton").addEventListener("click", resetCounselingEdit);
       $("#copyCounselingButton").addEventListener("click", () => copyText($("#counselingTable").innerText));
 
-      $("#addBookButton").addEventListener("click", () => {
-        const category = $("#newBookCategory").value;
-        const name = $("#newBookName").value.trim();
-        const chapter = $("#newBookChapter").value.trim() || "기본";
-        const totalUnits = Number($("#newBookUnits").value);
-        if (!name || !Number.isFinite(totalUnits) || totalUnits < 1) return;
-        data.textbooks.push({ id: uid("book"), category, name, chapter, totalUnits: Math.round(totalUnits), outline: [] });
-        $("#newBookName").value = "";
-        $("#newBookChapter").value = "";
-        saveData();
-        renderAll();
-      });
+      $("#addBookButton").addEventListener("click", saveBook);
+      $("#cancelBookEditButton").addEventListener("click", resetBookEdit);
 
       $("#outlineBook").addEventListener("change", () => {
         resetOutlineForm();
@@ -5474,6 +5532,11 @@ select[multiple] {
       });
 
       $("#bookTable").addEventListener("click", (event) => {
+        const editButton = event.target.closest("button[data-book-edit]");
+        if (editButton) {
+          editBook(editButton.dataset.bookEdit);
+          return;
+        }
         const outlineButton = event.target.closest("button[data-book-outline]");
         if (outlineButton) {
           $("#outlineBook").value = outlineButton.dataset.bookOutline;
@@ -5490,6 +5553,7 @@ select[multiple] {
           window.alert("이미 진도표에 사용된 교재라 삭제할 수 없습니다.");
           return;
         }
+        if (bookEditId === bookId) resetBookEdit();
         data.textbooks = data.textbooks.filter((book) => book.id !== bookId);
         saveData();
         renderAll();
