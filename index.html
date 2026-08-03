@@ -2855,7 +2855,7 @@ select[multiple] {
     function reportDateLabel(date) {
       if (!date) return "";
       const [, month, day] = date.split("-");
-      return `${month}월 ${day}일`;
+      return `${month}/${day}`;
     }
 
     function classGroupFor(studentRecord) {
