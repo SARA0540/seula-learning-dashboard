@@ -2094,7 +2094,7 @@ select[multiple] {
                 <option>듣기</option>
               </select>
             </label>
-            <label id="progressBookLabel">교재명/단원
+            <label id="progressBookLabel">교재명
               <select id="progressBook"></select>
             </label>
             <label id="progressUnitLabel">해당 Unit
@@ -2104,7 +2104,7 @@ select[multiple] {
               </span>
             </label>
             <label id="progressManualLabel" class="hidden">수기 진도
-              <input id="progressManual" type="text" placeholder="예: Grammar p.42-45 / 단어 Day 12">
+              <input id="progressManual" type="text" placeholder="예: 단어 Day 12">
             </label>
             <label>숙제 상태
               <select id="progressHomework">
@@ -2436,7 +2436,7 @@ select[multiple] {
     const currentMonth = new Date().toISOString().slice(0, 7);
     const MONTHLY_REPORT_SECTIONS = ["독해", "문법"];
     const BOOK_CATEGORIES = ["독해", "문법", "단어", "듣기"];
-    const BOOK_LINKED_PROGRESS_CATEGORIES = ["독해", "듣기"];
+    const BOOK_LINKED_PROGRESS_CATEGORIES = ["독해", "문법", "듣기"];
     const BOOK_OUTLINE_PREFIX = "__SEULA_BOOK_OUTLINE_V1__";
 
     const seedData = {
