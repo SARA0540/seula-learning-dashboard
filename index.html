@@ -1898,7 +1898,7 @@ select[multiple] {
           </section>
         </div>
 
-        <section class="panel" id="studentFormPanel">
+        <section class="panel">
           <div class="panel-head">
             <div>
               <p class="eyebrow">Monthly Log</p>
@@ -1930,7 +1930,7 @@ select[multiple] {
           </div>
           <button class="ghost" id="exportDataButton">데이터 내보내기</button>
         </div>
-        <section class="panel">
+        <section class="panel" id="studentFormPanel">
           <div class="form-grid">
             <label>이름<input id="newName" type="text" placeholder="예: 이서준"></label>
             <label>학교<input id="newSchool" type="text" placeholder="예: 장동초등학교"></label>
@@ -2301,8 +2301,8 @@ select[multiple] {
     const STUDENT_PIN_STORAGE_KEY = "seula-learning-dashboard-student-pin-v1";
     const TEACHER_ACCESS_CODE = "0324";
     const SUPABASE_CONFIG = {
-      url: "",
-      anonKey: ""
+      url: "https://ystutkkexjtebjfuwvwg.supabase.co",
+      anonKey: "sb_publishable_VpZmN-ykWrt3MCbfzB19jQ_7YYw1HGF"
     };
     const currentMonth = new Date().toISOString().slice(0, 7);
     const MONTHLY_REPORT_SECTIONS = ["독해", "문법"];
@@ -2585,8 +2585,8 @@ select[multiple] {
       try {
         const saved = JSON.parse(localStorage.getItem(SUPABASE_CONFIG_STORAGE_KEY) || "null");
         return {
-          url: saved?.url || SUPABASE_CONFIG.url,
-          anonKey: saved?.anonKey || SUPABASE_CONFIG.anonKey
+          url: SUPABASE_CONFIG.url || saved?.url || "",
+          anonKey: SUPABASE_CONFIG.anonKey || saved?.anonKey || ""
         };
       } catch (error) {
         console.warn(error);
@@ -2624,6 +2624,7 @@ select[multiple] {
       if (/Email not confirmed/i.test(message)) return "이메일 확인이 아직 안 됐어요";
       if (/Failed to fetch|NetworkError/i.test(message)) return "Supabase 주소 또는 인터넷 연결을 확인해주세요";
       if (/JWT|API key|apikey|Invalid API key/i.test(message)) return "anon public key를 확인해주세요";
+      if (/PGRST202|Could not find the function.*student_pin_login/i.test(message)) return "Supabase SQL Editor에서 최신 schema.sql 실행이 필요해요";
       if (/relation .* does not exist/i.test(message)) return "SQL Editor에서 schema.sql 실행이 필요해요";
       if (/violates foreign key constraint/i.test(message)) return "프로필의 학생 연결을 먼저 확인해주세요";
       if (/permission denied|row-level security|policy/i.test(message)) return "Supabase 권한 설정을 확인해주세요";
@@ -2774,11 +2775,11 @@ select[multiple] {
     }
 
     function classGroupFor(studentRecord) {
-      const gradeText = String(studentRecord?.grade || "");
+      const schoolText = String(studentRecord?.school || "");
       const daysText = String(studentRecord?.days || "");
-      const level = /중|7|8|9/.test(gradeText) ? "중등부" : "초등부";
-      const dayGroup = /화\s*금|화금|화\/금|화/.test(daysText) ? "화금반" : "월목반";
-      return `${level} ${dayGroup}`;
+      const level = schoolText.includes("중학교") ? "중학생" : "초등학생";
+      const dayGroup = /화\s*금|금\s*화|화금|금화|화\/금|금\/화|화|금/.test(daysText) ? "화금" : "월목";
+      return `${dayGroup} ${level}`;
     }
 
     function avg(values) {
@@ -3197,7 +3198,7 @@ select[multiple] {
     }
 
     function renderClassOverview() {
-      const groups = ["초등부 월목반", "초등부 화금반", "중등부 월목반", "중등부 화금반"];
+      const groups = ["월목 초등학생", "화금 초등학생", "월목 중학생", "화금 중학생"];
       $("#classOverview").innerHTML = groups.map((group) => {
         const students = data.students
           .filter((item) => classGroupFor(item) === group)
