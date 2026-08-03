@@ -1,0 +1,3693 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>슬아영어 학습 대시보드</title>
+  <style>
+    :root {
+      --ink: #17231d;
+      --muted: #66736c;
+      --line: #dce5df;
+      --paper: #ffffff;
+      --soft: #f5f7f4;
+      --brand: #00592a;
+      --brand-2: #0f7a46;
+      --mint: #dff3e9;
+      --blue: #2f6f9f;
+      --amber: #bb7a16;
+      --rose: #b84a53;
+      --shadow: 0 18px 45px rgba(29, 45, 37, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: #eef3ef;
+      font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 248px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 24px 18px;
+      background: #fbfcfa;
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .brand {
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 18px;
+    }
+
+    .brand strong {
+      display: block;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 19px;
+      line-height: 1.2;
+    }
+
+    .brand span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav button {
+      min-height: 42px;
+      border: 0;
+      border-radius: 8px;
+      color: var(--muted);
+      background: transparent;
+      text-align: left;
+      padding: 0 13px;
+      font-weight: 800;
+    }
+
+    .nav button:hover,
+    .nav button.active {
+      color: var(--brand);
+      background: var(--mint);
+    }
+
+    .sidebar-note {
+      margin-top: auto;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .main {
+      padding: 28px;
+      min-width: 0;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .eyebrow {
+      margin: 0 0 5px;
+      color: var(--brand-2);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      margin-bottom: 0;
+      font-size: 27px;
+      line-height: 1.2;
+    }
+
+    h2 {
+      margin-bottom: 0;
+      font-size: 20px;
+      line-height: 1.25;
+    }
+
+    h3 {
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      color: var(--ink);
+      outline: none;
+    }
+
+input,
+select {
+  height: 40px;
+  padding: 0 11px;
+}
+
+select[multiple] {
+  height: 108px;
+  padding: 8px 10px;
+}
+
+.unit-picker {
+  position: relative;
+}
+
+.unit-picker-button {
+  width: 100%;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0 36px 0 11px;
+  text-align: left;
+  font-weight: 850;
+}
+
+.unit-picker-button::after {
+  content: "⌄";
+  position: absolute;
+  right: 13px;
+  color: var(--muted);
+}
+
+.unit-picker-button:focus {
+  border-color: var(--brand-2);
+  box-shadow: 0 0 0 3px rgba(15, 122, 70, 0.12);
+  outline: none;
+}
+
+.unit-picker-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  display: grid;
+  max-height: 210px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--shadow);
+  padding: 8px;
+}
+
+.unit-picker-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 6px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.unit-picker-option input {
+  width: auto;
+  height: auto;
+}
+
+.hidden {
+  display: none !important;
+}
+
+    textarea {
+      min-height: 82px;
+      resize: vertical;
+      padding: 10px 11px;
+      line-height: 1.55;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--brand-2);
+      box-shadow: 0 0 0 3px rgba(15, 122, 70, 0.12);
+    }
+
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .metric,
+    .panel,
+    .report-card,
+    .student-row {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+
+    .metric {
+      min-height: 118px;
+      padding: 17px;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .metric .value {
+      margin: 8px 0 3px;
+      font-size: 30px;
+      font-weight: 900;
+    }
+
+    .metric .sub {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+      gap: 16px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .panel {
+      padding: 18px;
+      min-width: 0;
+    }
+
+    .panel-head,
+    .section-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .primary,
+    .ghost,
+    .danger {
+      min-height: 38px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      padding: 0 13px;
+      font-weight: 850;
+    }
+
+    .primary {
+      border-color: var(--brand);
+      background: var(--brand);
+      color: #fff;
+    }
+
+    .ghost {
+      background: #fff;
+      color: var(--muted);
+    }
+
+    .primary:disabled,
+    .ghost:disabled,
+    .danger:disabled {
+      cursor: wait;
+      opacity: 0.65;
+    }
+
+    .ai-status {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .danger {
+      border-color: #f1c6c9;
+      background: #fff7f7;
+      color: var(--rose);
+    }
+
+    .inline-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .tiny-button {
+      min-height: 28px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      padding: 0 9px;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .tiny-button.danger-text {
+      color: var(--rose);
+      border-color: #f1c6c9;
+      background: #fff7f7;
+    }
+
+    .edit-note {
+      display: none;
+      margin: 10px 0 0;
+      color: var(--brand);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .edit-note.active {
+      display: block;
+    }
+
+    .panel.editing {
+      border-color: var(--brand-2);
+      box-shadow: 0 0 0 3px rgba(15, 122, 70, 0.14), var(--shadow);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      background: #f8faf7;
+    }
+
+    .date-group-row td {
+      padding: 10px 8px;
+      color: var(--brand);
+      background: var(--mint);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border-radius: 999px;
+      padding: 0 9px;
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--brand);
+      background: var(--mint);
+      white-space: nowrap;
+    }
+
+    .status.warn {
+      color: var(--amber);
+      background: #fff1d8;
+    }
+
+    .status.risk {
+      color: var(--rose);
+      background: #ffe7e9;
+    }
+
+    .status.neutral {
+      color: #7f8780;
+      background: #f0f2ef;
+    }
+
+    .daily-panel {
+      margin-bottom: 16px;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .daily-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 22px 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .daily-head p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .daily-controls {
+      display: grid;
+      grid-template-columns: 160px minmax(220px, 290px);
+      gap: 10px;
+      align-items: end;
+    }
+
+    .daily-search-wrap {
+      position: relative;
+    }
+
+    .daily-search-wrap span {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 15px;
+      pointer-events: none;
+    }
+
+    .daily-search-wrap input {
+      padding-left: 34px;
+    }
+
+    .daily-table th,
+    .daily-table td {
+      padding: 14px 22px;
+      vertical-align: middle;
+    }
+
+    .daily-student {
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      gap: 12px;
+      align-items: center;
+      min-width: 180px;
+    }
+
+    .student-avatar {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      color: var(--brand);
+      background: #e7f0eb;
+      font-weight: 900;
+    }
+
+    .daily-student strong {
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .daily-student span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .daily-time-input,
+    .daily-attendance-select {
+      width: 112px;
+      height: 34px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .daily-action-button {
+      width: 34px;
+      min-height: 30px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .daily-action-button:hover {
+      border-color: var(--line);
+      background: #f8faf7;
+      color: var(--brand);
+    }
+
+    .bar-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .class-overview-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .class-card {
+      min-height: 190px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfa;
+      padding: 14px;
+    }
+
+    .class-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .class-card h3 {
+      margin: 0;
+    }
+
+    .class-student-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .class-student {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .class-student-top,
+    .class-student-stats {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .class-student strong {
+      font-size: 14px;
+    }
+
+    .class-student-stats {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .bar-line {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr) 58px;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .bar-track {
+      height: 12px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #edf1ee;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--brand), var(--blue));
+    }
+
+    .book-progress {
+      display: grid;
+      gap: 10px;
+    }
+
+    .progress-meter {
+      height: 10px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #edf1ee;
+    }
+
+    .progress-meter span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--brand-2), var(--amber));
+    }
+
+    .book-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px;
+      background: #fbfcfa;
+    }
+
+    .book-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .book-card strong {
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .student-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .student-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 14px;
+      box-shadow: none;
+    }
+
+    .student-row strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .student-row span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 11px;
+    }
+
+    .form-grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .form-grid + .button-row,
+    .panel + .panel {
+      margin-top: 12px;
+    }
+
+    .report-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .report-card {
+      padding: 22px;
+      color: #111;
+      background: #fff;
+      box-shadow: none;
+    }
+
+    .report-card.one-page-export {
+      width: 1120px;
+      padding: 24px 30px;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      box-sizing: border-box;
+    }
+
+    .report-title {
+      text-align: center;
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 900;
+      letter-spacing: 0;
+      margin-bottom: 13px;
+    }
+
+    .report-meta,
+    .score-table {
+      width: 100%;
+      border: 2px solid #333;
+      border-collapse: collapse;
+      margin-bottom: 14px;
+      font-size: 12px;
+    }
+
+    .report-meta th,
+    .report-meta td,
+    .score-table th,
+    .score-table td {
+      border: 1px solid #333;
+      padding: 6px;
+      text-align: center;
+    }
+
+    .progress-report-table {
+      table-layout: fixed;
+      font-size: 11px;
+    }
+
+    .progress-report-table th {
+      background: #f3f5f2;
+      font-size: 11px;
+    }
+
+    .progress-report-table td {
+      height: 26px;
+      padding: 5px 4px;
+      vertical-align: middle;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+    }
+
+    .progress-report-table .date-cell {
+      width: 76px;
+      white-space: nowrap;
+    }
+
+    .progress-report-table .word-range-cell {
+      width: 132px;
+      white-space: nowrap;
+    }
+
+    .progress-report-table .word-score-cell {
+      width: 42px;
+    }
+
+    .progress-report-table .lesson-cell {
+      text-align: center;
+    }
+
+    .progress-report-table .monthly-progress-row td {
+      background: #eef7f2;
+      font-weight: 900;
+    }
+
+    .report-section-title {
+      margin: 13px 0 8px;
+      font-size: 13px;
+      font-weight: 900;
+      color: var(--brand);
+    }
+
+    .mini-chart {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 13px;
+    }
+
+    .chart-box {
+      border: 1px solid #cfd7d1;
+      padding: 10px;
+      min-height: 170px;
+    }
+
+    .chart-title {
+      margin: 0 0 10px;
+      text-align: center;
+      color: #333;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .column-chart {
+      height: 116px;
+      display: flex;
+      align-items: end;
+      gap: 8px;
+      padding: 0 6px;
+      border-left: 1px solid #ddd;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .column {
+      flex: 1;
+      min-width: 12px;
+      background: #f4b400;
+      position: relative;
+    }
+
+    .column.blue {
+      background: var(--blue);
+    }
+
+    .column.gray {
+      background: #aab3ad;
+    }
+
+    .column span {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      font-weight: 800;
+      color: #333;
+      padding-bottom: 2px;
+    }
+
+    .chart-labels {
+      display: flex;
+      justify-content: space-around;
+      gap: 6px;
+      margin-top: 7px;
+      color: #555;
+      font-size: 10px;
+    }
+
+    .chart-legend {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 9px;
+      color: #555;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .compare-chart {
+      height: 136px;
+      display: flex;
+      align-items: stretch;
+      gap: 22px;
+      padding: 4px 14px 0;
+      border-left: 1px solid #ddd;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .compare-group {
+      flex: 1;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      min-width: 0;
+    }
+
+    .compare-bars {
+      display: flex;
+      align-items: end;
+      justify-content: center;
+      gap: 8px;
+      min-height: 106px;
+    }
+
+    .compare-bar {
+      position: relative;
+      width: 28px;
+      min-height: 4px;
+      background: var(--blue);
+    }
+
+    .compare-bar.gray {
+      background: #aab3ad;
+    }
+
+    .compare-bar span {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding-bottom: 2px;
+      color: #333;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .compare-label {
+      margin-top: 7px;
+      text-align: center;
+      color: #555;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      background: var(--blue);
+    }
+
+    .legend-swatch.gray {
+      background: #aab3ad;
+    }
+
+    .comment-box {
+      border: 1px solid #333;
+      padding: 10px;
+      min-height: 140px;
+      font-size: 12px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+
+    .report-card.one-page-export .report-title {
+      margin-bottom: 9px;
+      font-size: 20px;
+    }
+
+    .report-card.one-page-export .report-meta,
+    .report-card.one-page-export .score-table {
+      margin-bottom: 9px;
+      font-size: 10px;
+    }
+
+    .report-card.one-page-export .report-meta th,
+    .report-card.one-page-export .report-meta td,
+    .report-card.one-page-export .score-table th,
+    .report-card.one-page-export .score-table td {
+      padding: 4px;
+    }
+
+    .report-card.one-page-export .report-section-title {
+      margin: 8px 0 5px;
+      font-size: 12px;
+    }
+
+    .report-card.one-page-export .mini-chart {
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .report-card.one-page-export .chart-box {
+      min-height: 130px;
+      padding: 8px;
+    }
+
+    .report-card.one-page-export .column-chart {
+      height: 86px;
+    }
+
+    .report-card.one-page-export .compare-chart {
+      height: 100px;
+    }
+
+    .report-card.one-page-export .compare-bars {
+      min-height: 74px;
+    }
+
+    .report-card.one-page-export .progress-report-table {
+      font-size: 9px;
+    }
+
+    .report-card.one-page-export .progress-report-table td {
+      height: 20px;
+      padding: 3px;
+    }
+
+    .report-card.one-page-export .comment-box {
+      min-height: 74px;
+      padding: 7px;
+      font-size: 10px;
+      line-height: 1.38;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .empty {
+      padding: 20px;
+      color: var(--muted);
+      text-align: center;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      background: #fbfcfa;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+      }
+
+      .nav {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .metric-grid,
+      .class-overview-grid,
+      .grid-2,
+      .grid-3,
+      .report-layout,
+      .mini-chart {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar,
+      .section-head,
+      .panel-head,
+      .daily-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .filters {
+        justify-content: stretch;
+      }
+
+      .daily-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .form-grid,
+      .form-grid.two {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (min-width: 981px) and (max-width: 1320px) {
+      .class-overview-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 5mm;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .sidebar,
+      .topbar,
+      .view:not(#reportView) {
+        display: none !important;
+      }
+
+      .app {
+        display: block;
+      }
+
+      .main {
+        padding: 0;
+      }
+
+      #reportView {
+        display: block !important;
+      }
+
+      .section-head,
+      .report-layout > .panel {
+        display: none;
+      }
+
+      .report-layout {
+        display: block;
+      }
+
+      .report-card {
+        border: 0;
+        width: 200mm;
+        padding: 0;
+        box-shadow: none;
+      }
+
+      .report-title {
+        margin-bottom: 6px;
+        font-size: 15px;
+      }
+
+      .report-meta,
+      .score-table {
+        margin-bottom: 6px;
+        font-size: 8.4px;
+      }
+
+      .report-meta th,
+      .report-meta td,
+      .score-table th,
+      .score-table td {
+        padding: 2.4px;
+      }
+
+      .report-section-title {
+        margin: 6px 0 3px;
+        font-size: 10px;
+      }
+
+      .mini-chart {
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+
+      .chart-box {
+        min-height: 94px;
+        padding: 6px;
+      }
+
+      .chart-title {
+        margin-bottom: 5px;
+        font-size: 9px;
+      }
+
+      .column-chart {
+        height: 62px;
+      }
+
+      .compare-chart {
+        height: 76px;
+        gap: 16px;
+      }
+
+      .compare-bars {
+        min-height: 52px;
+      }
+
+      .compare-bar {
+        width: 20px;
+      }
+
+      .chart-labels,
+      .chart-legend,
+      .compare-label {
+        margin-top: 4px;
+        font-size: 8px;
+      }
+
+      .progress-report-table {
+        font-size: 7.7px;
+      }
+
+      .progress-report-table th {
+        font-size: 7.7px;
+      }
+
+      .progress-report-table td {
+        height: 16px;
+        padding: 2px;
+      }
+
+      .comment-box {
+        min-height: 55px;
+        padding: 5px;
+        font-size: 8px;
+        line-height: 1.26;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <strong>SEULA ENGLISH</strong>
+        <span>학습 관리</span>
+      </div>
+      <nav class="nav" aria-label="주요 화면">
+        <button class="active" data-view="dashboardView">대시보드</button>
+        <button data-view="studentsView">학생 관리</button>
+        <button data-view="inputView">자료 입력</button>
+        <button data-view="booksView">교재 관리</button>
+        <button data-view="counselingView">상담자료</button>
+        <button data-view="commentView">코멘트</button>
+        <button data-view="reportView">리포트</button>
+      </nav>
+      <p class="sidebar-note">학생 정보, 월말테스트, 단어테스트, 진도표, 관찰 기록을 한곳에 쌓아 월말리포트 초안을 자동으로 만듭니다.</p>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Learning Dashboard</p>
+          <h1>슬아영어 학습 대시보드</h1>
+        </div>
+        <div class="filters">
+          <label>
+            월 선택
+            <input id="monthInput" type="month">
+          </label>
+          <label>
+            학생 선택
+            <select id="studentSelect"></select>
+          </label>
+        </div>
+      </header>
+
+      <section class="view active" id="dashboardView">
+        <section class="panel daily-panel">
+          <div class="daily-head">
+            <div>
+              <h2>오늘 학생 현황</h2>
+              <p>출석부터 숙제와 진도까지 한 번에 확인하세요.</p>
+            </div>
+            <div class="daily-controls">
+              <label>날짜 선택<input id="dailyDateInput" type="date"></label>
+              <label>학생 검색
+                <span class="daily-search-wrap">
+                  <span>⌕</span>
+                  <input id="dailySearchInput" type="search" placeholder="학생 이름 또는 학년 검색">
+                </span>
+              </label>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="daily-table">
+              <thead>
+                <tr>
+                  <th>학생</th>
+                  <th>입실 시각</th>
+                  <th>출석</th>
+                  <th>독해 진도</th>
+                  <th>문법 진도</th>
+                  <th>숙제</th>
+                  <th>관리</th>
+                </tr>
+              </thead>
+              <tbody id="dailyStatusTable"></tbody>
+            </table>
+          </div>
+        </section>
+        <div class="metric-grid" id="metricGrid"></div>
+        <section class="panel" style="margin-bottom:16px;">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Class Overview</p>
+              <h2>반별 전체 학생 현황</h2>
+            </div>
+          </div>
+          <div class="class-overview-grid" id="classOverview"></div>
+        </section>
+        <div class="grid-2">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Attention</p>
+                <h2>이번달 확인이 필요한 학생</h2>
+              </div>
+              <button class="ghost" id="copySummaryButton">요약 복사</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>학생</th>
+                    <th>월말</th>
+                    <th>단어 평균</th>
+                    <th>숙제</th>
+                    <th>상태</th>
+                  </tr>
+                </thead>
+                <tbody id="attentionTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Score Mix</p>
+                <h2>영역별 평균</h2>
+              </div>
+            </div>
+            <div class="bar-list" id="sectionBars"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="studentsView">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Students</p>
+            <h2>학생 기본 정보</h2>
+          </div>
+          <button class="ghost" id="exportDataButton">데이터 내보내기</button>
+        </div>
+        <section class="panel">
+          <div class="form-grid">
+            <label>이름<input id="newName" type="text" placeholder="예: 이서준"></label>
+            <label>학교<input id="newSchool" type="text" placeholder="예: 장동초등학교"></label>
+            <label>학년<input id="newGrade" type="text" placeholder="예: 5학년"></label>
+            <label>수업 요일<input id="newDays" type="text" placeholder="예: 월수금"></label>
+          </div>
+          <div class="button-row">
+            <button class="primary" id="addStudentButton">학생 추가</button>
+            <button class="danger" id="deleteStudentButton">선택 학생 삭제</button>
+          </div>
+        </section>
+        <div class="student-list" id="studentList"></div>
+      </section>
+
+      <section class="view" id="inputView">
+        <section class="panel" id="wordPanel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Daily Word Test</p>
+              <h2>단어테스트 입력</h2>
+            </div>
+          </div>
+          <div class="form-grid">
+            <label>날짜<input id="wordDate" type="date"></label>
+            <label>단어 교재
+              <select id="wordBook"></select>
+            </label>
+            <label>해당 Unit
+              <input id="wordUnit" type="text" placeholder="예: Unit 01 / 17-18 / 내신대비">
+            </label>
+            <label>점수<input id="wordScore" type="number" min="0" placeholder="예: 37"></label>
+            <label>만점<input id="wordMax" type="number" min="1" value="40"></label>
+            <label>암기 단어 수<input id="wordMemorized" type="number" min="0" placeholder="예: 50"></label>
+          </div>
+          <div class="button-row">
+            <button class="primary" id="saveWordButton">단어테스트 저장</button>
+            <button class="ghost" id="cancelWordEditButton" type="button">수정 취소</button>
+          </div>
+          <p class="edit-note" id="wordEditNote">단어테스트 내역을 수정하는 중입니다.</p>
+        </section>
+
+        <section class="panel" id="progressPanel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Progress Log</p>
+              <h2>일일 진도표 입력</h2>
+            </div>
+          </div>
+          <div class="form-grid">
+            <label>날짜<input id="progressDate" type="date"></label>
+            <label>진도 구분
+              <select id="progressCategory">
+                <option>독해</option>
+                <option>문법</option>
+                <option>단어</option>
+                <option>듣기</option>
+              </select>
+            </label>
+            <label id="progressBookLabel">교재명/단원
+              <select id="progressBook"></select>
+            </label>
+            <label id="progressUnitLabel">해당 Unit
+              <span class="unit-picker" id="progressUnitPicker">
+                <button class="unit-picker-button" id="progressUnitButton" type="button">Unit 선택</button>
+                <span class="unit-picker-menu hidden" id="progressUnitMenu"></span>
+              </span>
+            </label>
+            <label id="progressManualLabel" class="hidden">수기 진도
+              <input id="progressManual" type="text" placeholder="예: Grammar p.42-45 / 단어 Day 12">
+            </label>
+            <label>숙제 상태
+              <select id="progressHomework">
+                <option>완료</option>
+                <option value="-">-</option>
+                <option>일부 미완료</option>
+                <option>미완료</option>
+              </select>
+            </label>
+            <label>메모<input id="progressMemo" type="text" placeholder="예: 독해 지문 정확도 향상"></label>
+          </div>
+          <div class="button-row">
+            <button class="primary" id="saveProgressButton">진도 저장</button>
+            <button class="ghost" id="reloadBooksButton" type="button">교재 불러오기</button>
+            <button class="ghost" id="cancelProgressEditButton" type="button">수정 취소</button>
+          </div>
+          <p class="edit-note" id="progressEditNote">진도표 내역을 수정하는 중입니다.</p>
+        </section>
+
+        <section class="panel" id="monthlyPanel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Monthly Test</p>
+              <h2>월말테스트 입력</h2>
+            </div>
+          </div>
+          <div class="form-grid">
+            <label>영역
+              <select id="testSection">
+                <option>독해</option>
+                <option>문법</option>
+              </select>
+            </label>
+            <label>시험 범위<input id="testRange" type="text" placeholder="예: Unit 01-03"></label>
+            <label>점수<input id="testScore" type="number" min="0" max="100" placeholder="예: 85"></label>
+            <label>지난달 점수<input id="testPrev" type="number" min="0" max="100" placeholder="예: 78"></label>
+          </div>
+          <div class="button-row">
+            <button class="primary" id="saveMonthlyButton">월말테스트 저장</button>
+            <button class="ghost" id="cancelMonthlyEditButton" type="button">수정 취소</button>
+          </div>
+          <p class="edit-note" id="monthlyEditNote">월말테스트 내역을 수정하는 중입니다.</p>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Recent Data</p>
+              <h2>선택 학생의 이번달 입력 내역</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>구분</th>
+                  <th>날짜/영역</th>
+                  <th>내용</th>
+                  <th>점수/상태</th>
+                  <th>관리</th>
+                </tr>
+              </thead>
+              <tbody id="recentTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" id="booksView">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Books</p>
+            <h2>교재 관리</h2>
+          </div>
+        </div>
+        <div class="grid-2">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Register</p>
+                <h2>교재 미리 등록</h2>
+              </div>
+            </div>
+            <div class="form-grid">
+              <label>구분
+                <select id="newBookCategory">
+                  <option>독해</option>
+                  <option>문법</option>
+                  <option>단어</option>
+                  <option>듣기</option>
+                </select>
+              </label>
+              <label>교재명<input id="newBookName" type="text" placeholder="예: Subject Links L3"></label>
+              <label>단원<input id="newBookChapter" type="text" placeholder="예: Chapter 01 / Level 3"></label>
+              <label>전체 Unit 수<input id="newBookUnits" type="number" min="1" value="12"></label>
+            </div>
+            <div class="button-row">
+              <button class="primary" id="addBookButton">교재 등록</button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Bulk Upload</p>
+                <h2>엑셀 양식으로 한번에 등록</h2>
+              </div>
+            </div>
+            <div class="button-row">
+              <button class="ghost" id="downloadBookTemplateButton" type="button">양식 다운로드</button>
+              <label style="display:inline-grid;">
+                CSV 파일 업로드
+                <input id="bookCsvInput" type="file" accept=".csv,text/csv">
+              </label>
+            </div>
+            <p class="save-note" id="bookUploadStatus">엑셀에서 양식을 열어 작성한 뒤 CSV 형식으로 저장해서 업로드해주세요.</p>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Progress</p>
+                <h2>선택 학생 교재 완료율</h2>
+              </div>
+            </div>
+            <div class="book-progress" id="bookProgressList"></div>
+          </section>
+        </div>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Library</p>
+              <h2>등록된 교재 목록</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>구분</th>
+                  <th>교재명</th>
+                  <th>단원</th>
+                  <th>전체유닛수</th>
+                  <th>사용 기록</th>
+                  <th>관리</th>
+                </tr>
+              </thead>
+              <tbody id="bookTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" id="counselingView">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Counseling</p>
+            <h2>상담자료 기록</h2>
+          </div>
+        </div>
+
+        <section class="panel" id="counselingPanel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Record</p>
+              <h2>상담 내용 입력</h2>
+            </div>
+          </div>
+          <div class="form-grid">
+            <label>상담일<input id="counselingDate" type="date"></label>
+            <label>상담유형
+              <select id="counselingType">
+                <option>전화</option>
+                <option>방문</option>
+                <option>문자</option>
+                <option>온라인</option>
+                <option>기타</option>
+              </select>
+            </label>
+            <label>상담대상
+              <select id="counselingTarget">
+                <option>학부모</option>
+                <option>학생</option>
+                <option>학부모+학생</option>
+                <option>내부 공유</option>
+              </select>
+            </label>
+            <label>주제<input id="counselingTopic" type="text" placeholder="예: 숙제 습관 / 반 변경 / 학습 방향"></label>
+          </div>
+          <div class="form-grid two" style="margin-top:11px;">
+            <label>상담내용<textarea id="counselingContent" placeholder="상담에서 나온 주요 내용을 적어주세요."></textarea></label>
+            <label>후속조치<textarea id="counselingAction" placeholder="다음 수업에서 확인할 내용이나 학부모님께 안내할 내용을 적어주세요."></textarea></label>
+          </div>
+          <div class="form-grid" style="margin-top:11px;">
+            <label>재상담일<input id="counselingFollowDate" type="date"></label>
+          </div>
+          <div class="button-row">
+            <button class="primary" id="saveCounselingButton">상담자료 저장</button>
+            <button class="ghost" id="cancelCounselingEditButton" type="button">수정 취소</button>
+          </div>
+          <p class="edit-note" id="counselingEditNote">상담자료를 수정하는 중입니다.</p>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">History</p>
+              <h2>선택 학생의 이번달 상담자료</h2>
+            </div>
+            <button class="ghost" id="copyCounselingButton">상담자료 복사</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>상담일</th>
+                  <th>유형/대상</th>
+                  <th>주제</th>
+                  <th>상담내용</th>
+                  <th>후속조치</th>
+                  <th>재상담일</th>
+                  <th>관리</th>
+                </tr>
+              </thead>
+              <tbody id="counselingTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" id="commentView">
+        <div class="grid-2">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Teacher Comment</p>
+                <h2>선생님 관찰 기록</h2>
+              </div>
+            </div>
+            <div class="form-grid two">
+              <label>학습 태도<textarea id="obsAttitude" placeholder="예: 수업 집중도가 좋고 질문에 적극적으로 답합니다."></textarea></label>
+              <label>강점<textarea id="obsStrength" placeholder="예: 단어 암기 속도가 빠르고 독해 핵심 내용을 잘 잡습니다."></textarea></label>
+              <label>약점<textarea id="obsWeakness" placeholder="예: 긴 문장을 해석할 때 주어와 동사를 놓치는 경우가 있습니다."></textarea></label>
+              <label>다음달 방향<textarea id="obsPlan" placeholder="예: 문장 구조 표시 연습과 오답 단어 누적 복습을 진행합니다."></textarea></label>
+            </div>
+            <div class="button-row">
+              <button class="primary" id="saveObservationButton">코멘트 저장</button>
+              <button class="ghost" id="generateCommentButton">문장 자동 정리</button>
+              <button class="ghost" id="aiAnalysisButton">AI 분석 생성</button>
+            </div>
+            <p class="ai-status" id="aiDraftStatus">AI 연결 전 미리보기</p>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Preview</p>
+                <h2>리포트 코멘트 초안</h2>
+              </div>
+              <button class="ghost" id="copyCommentButton">코멘트 복사</button>
+            </div>
+            <textarea id="commentPreview" style="min-height: 310px;"></textarea>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="reportView">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Parent Report</p>
+            <h2>월말리포트 미리보기</h2>
+          </div>
+          <div class="button-row">
+            <button class="ghost" id="copyReportButton">리포트 문장 복사</button>
+            <button class="ghost" id="saveReportImageButton">이미지 저장</button>
+            <button class="primary" id="saveReportPdfButton">PDF 저장</button>
+          </div>
+        </div>
+        <div class="report-layout">
+          <article class="report-card" id="reportCard"></article>
+          <aside class="panel">
+            <h3>리포트 체크리스트</h3>
+            <div id="reportChecklist" class="bar-list"></div>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "seula-monthly-report-dashboard-v1";
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const MONTHLY_REPORT_SECTIONS = ["독해", "문법"];
+    const BOOK_CATEGORIES = ["독해", "문법", "단어", "듣기"];
+    const BOOK_LINKED_PROGRESS_CATEGORIES = ["독해", "듣기"];
+
+    const seedData = {
+      students: [
+        { id: "stu-1", name: "이서준", school: "장동초등학교", grade: "5학년", days: "월수금" },
+        { id: "stu-2", name: "김민서", school: "슬아초등학교", grade: "4학년", days: "화목" },
+        { id: "stu-3", name: "박지우", school: "정담초등학교", grade: "6학년", days: "월수금" }
+      ],
+      monthlyTests: [
+        { studentId: "stu-1", month: currentMonth, section: "독해", range: "Subject Links Unit 03", score: 88, previous: 84 },
+        { studentId: "stu-1", month: currentMonth, section: "문법", range: "Unit 01-10", score: 74, previous: 68 },
+        { studentId: "stu-2", month: currentMonth, section: "독해", range: "Subject Links Unit 02", score: 76, previous: 80 },
+        { studentId: "stu-2", month: currentMonth, section: "문법", range: "Unit 01-10", score: 69, previous: 72 },
+        { studentId: "stu-3", month: currentMonth, section: "독해", range: "Subject Links Unit 04", score: 91, previous: 86 },
+        { studentId: "stu-3", month: currentMonth, section: "문법", range: "Unit 01-10", score: 84, previous: 79 }
+      ],
+      wordTests: [
+        { studentId: "stu-1", date: `${currentMonth}-03`, bookId: "book-4", unit: 1, range: "Word Master Unit 01", score: 38, max: 40 },
+        { studentId: "stu-1", date: `${currentMonth}-05`, bookId: "book-4", unit: 2, range: "Word Master Unit 02", score: 34, max: 40 },
+        { studentId: "stu-1", date: `${currentMonth}-10`, bookId: "book-4", unit: 8, range: "Word Master Unit 08", score: 17, max: 20 },
+        { studentId: "stu-1", date: `${currentMonth}-12`, bookId: "book-4", unit: 3, range: "Word Master Unit 03", score: 31, max: 40 },
+        { studentId: "stu-1", date: `${currentMonth}-17`, bookId: "book-4", unit: 10, range: "Word Master Unit 10", score: 18, max: 20 },
+        { studentId: "stu-2", date: `${currentMonth}-04`, bookId: "book-4", unit: 1, range: "Word Master Unit 01", score: 29, max: 40 },
+        { studentId: "stu-2", date: `${currentMonth}-11`, bookId: "book-4", unit: 2, range: "Word Master Unit 02", score: 31, max: 40 },
+        { studentId: "stu-3", date: `${currentMonth}-04`, bookId: "book-4", unit: 1, range: "Word Master Unit 01", score: 39, max: 40 },
+        { studentId: "stu-3", date: `${currentMonth}-11`, bookId: "book-4", unit: 2, range: "Word Master Unit 02", score: 37, max: 40 }
+      ],
+      textbooks: [
+        { id: "book-1", category: "독해", name: "Subject Links L3", chapter: "Unit Book", totalUnits: 12 },
+        { id: "book-2", category: "문법", name: "Grammar Space", chapter: "Basic", totalUnits: 10 },
+        { id: "book-3", category: "듣기", name: "Listening Juice", chapter: "Level 4", totalUnits: 12 },
+        { id: "book-4", category: "단어", name: "Word Master", chapter: "Day 01-30", totalUnits: 30 }
+      ],
+      progressLogs: [
+        { studentId: "stu-1", date: `${currentMonth}-03`, bookId: "book-1", unit: 1, lesson: "Subject Links L3 Unit 01", homework: "완료", memo: "중심 문장 찾기 양호" },
+        { studentId: "stu-1", date: `${currentMonth}-05`, bookId: "book-2", unit: 7, lesson: "Grammar Space Unit 07", homework: "일부 미완료", memo: "오답 문장 재확인 필요" },
+        { studentId: "stu-1", date: `${currentMonth}-10`, bookId: "book-1", unit: 2, lesson: "Subject Links L3 Unit 02", homework: "완료", memo: "단어 재시험 통과" },
+        { studentId: "stu-1", date: `${currentMonth}-12`, bookId: "book-3", unit: 10, lesson: "Listening Juice Unit 10", homework: "완료", memo: "듣기 세부 정보 파악 향상" },
+        { studentId: "stu-2", date: `${currentMonth}-04`, bookId: "book-1", unit: 1, lesson: "Subject Links L3 Unit 01", homework: "미완료", memo: "단어 암기량 부족" },
+        { studentId: "stu-3", date: `${currentMonth}-04`, bookId: "book-2", unit: 5, lesson: "Grammar Space Unit 05", homework: "완료", memo: "문장 구조 이해 좋음" }
+      ],
+      counselingRecords: [
+        {
+          studentId: "stu-1",
+          date: `${currentMonth}-15`,
+          type: "전화",
+          target: "학부모",
+          topic: "단어 복습 습관",
+          content: "단어 테스트 준비는 꾸준하지만 누적 복습 시간이 부족하다는 점을 공유했습니다.",
+          action: "다음달부터 오답 단어장을 주 1회 확인하기로 했습니다.",
+          followDate: `${currentMonth}-29`
+        }
+      ],
+      observations: [
+        {
+          studentId: "stu-1",
+          month: currentMonth,
+          attitude: "수업 시간 집중도가 안정적이며 질문을 받으면 끝까지 생각해보려는 태도가 좋습니다.",
+          strength: "독해에서 핵심 문장을 찾는 힘이 좋아졌고, 단어 테스트도 대체로 꾸준히 준비해옵니다.",
+          weakness: "문법 문제에서는 시제와 수 일치처럼 세부 조건을 놓칠 때가 있습니다.",
+          plan: "다음달에는 오답 문장을 직접 고쳐 쓰는 연습과 누적 단어 복습을 함께 진행하면 좋겠습니다."
+        }
+      ],
+      dailyStatuses: [
+        { studentId: "stu-1", date: `${currentMonth}-04`, arrivalTime: "14:52", attendance: "출석" },
+        { studentId: "stu-2", date: `${currentMonth}-04`, arrivalTime: "15:08", attendance: "지각" },
+        { studentId: "stu-3", date: `${currentMonth}-04`, arrivalTime: "15:01", attendance: "출석" }
+      ]
+    };
+
+    let data = loadData();
+    let selectedMonth = currentMonth;
+    let selectedStudentId = data.students[0]?.id || "";
+    let dashboardDate = todayString();
+    let dashboardSearch = "";
+    let editingState = { type: "", index: -1 };
+    let counselingEditIndex = -1;
+
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+
+    function loadData() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+        if (saved && Array.isArray(saved.students)) return normalizeData(saved);
+      } catch (error) {
+        console.warn(error);
+      }
+      return normalizeData(structuredClone(seedData));
+    }
+
+    function normalizeData(source) {
+      const normalized = {
+        students: Array.isArray(source.students) ? source.students : [],
+        monthlyTests: Array.isArray(source.monthlyTests) ? source.monthlyTests : [],
+        wordTests: Array.isArray(source.wordTests) ? source.wordTests : [],
+        textbooks: Array.isArray(source.textbooks) && source.textbooks.length ? source.textbooks : structuredClone(seedData.textbooks),
+        progressLogs: Array.isArray(source.progressLogs) ? source.progressLogs : [],
+        counselingRecords: Array.isArray(source.counselingRecords) ? source.counselingRecords : [],
+        observations: Array.isArray(source.observations) ? source.observations : [],
+        dailyStatuses: Array.isArray(source.dailyStatuses) ? source.dailyStatuses : []
+      };
+
+      normalized.textbooks = normalized.textbooks.map((book, index) => ({
+        id: book.id || uid("book"),
+        category: BOOK_CATEGORIES.includes(book.category) ? book.category : inferCategoryFromText(book.name),
+        name: book.name || `교재 ${index + 1}`,
+        chapter: book.chapter || "기본",
+        totalUnits: Math.max(1, Number(book.totalUnits) || 1)
+      }));
+
+      normalized.wordTests = normalized.wordTests.map((test) => {
+        const bookId = test.bookId || inferBookIdFromText(test.range, normalized.textbooks);
+        const book = normalized.textbooks.find((item) => item.id === bookId);
+        const unit = Number(test.unit) || extractUnit(test.unitText || test.range);
+        const unitText = normalizeWordUnitText(test.unitText || (unit ? `Unit ${String(unit).padStart(2, "0")}` : ""));
+        return {
+          ...test,
+          bookId,
+          unitText,
+          unit,
+          memorized: Number.isFinite(Number(test.memorized)) ? Number(test.memorized) : Number(test.max) || 0,
+          range: test.range || (book && unitText ? `${textbookLabel(book)} ${unitText}` : book ? textbookLabel(book) : "-")
+        };
+      });
+
+      normalized.progressLogs = normalized.progressLogs.map((log) => {
+        const bookId = log.bookId || inferBookIdFromText(log.lesson, normalized.textbooks);
+        const book = normalized.textbooks.find((item) => item.id === bookId);
+        const category = BOOK_CATEGORIES.includes(log.category) ? log.category : book?.category || inferCategoryFromText(log.lesson);
+        const units = normalizeUnits(log.units || log.unit || extractUnit(log.lesson));
+        const unit = Math.max(0, ...units);
+        return {
+          ...log,
+          category,
+          bookId,
+          lesson: log.lesson || (book && units.length ? `${textbookLabel(book)} ${unitListLabel(units)}` : log.manualLesson || textbookLabel(book)),
+          manualLesson: log.manualLesson || (!bookId ? log.lesson : ""),
+          unit,
+          units
+        };
+      });
+
+      normalized.dailyStatuses = normalized.dailyStatuses
+        .filter((item) => item.studentId && item.date)
+        .map((item) => ({
+          studentId: item.studentId,
+          date: item.date,
+          arrivalTime: item.arrivalTime || "",
+          attendance: ["미확인", "출석", "지각", "결석"].includes(item.attendance) ? item.attendance : "미확인"
+        }));
+
+      return normalized;
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function uid(prefix) {
+      return `${prefix}-${Date.now()}-${Math.round(Math.random() * 1000)}`;
+    }
+
+    function student() {
+      return data.students.find((item) => item.id === selectedStudentId) || data.students[0];
+    }
+
+    function monthLabel(month) {
+      if (!month) return "";
+      const [year, monthNum] = month.split("-");
+      return `${year}년 ${Number(monthNum)}월`;
+    }
+
+    function todayString() {
+      const today = new Date();
+      today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+      return today.toISOString().slice(0, 10);
+    }
+
+    function dateLabel(date) {
+      if (!date) return "월말평가";
+      const [, month, day] = date.split("-");
+      return `${Number(month)}월 ${Number(day)}일`;
+    }
+
+    function reportDateLabel(date) {
+      if (!date) return "";
+      const [, month, day] = date.split("-");
+      return `${month}월 ${day}일`;
+    }
+
+    function classGroupFor(studentRecord) {
+      const gradeText = String(studentRecord?.grade || "");
+      const daysText = String(studentRecord?.days || "");
+      const level = /중|7|8|9/.test(gradeText) ? "중등부" : "초등부";
+      const dayGroup = /화\s*금|화금|화\/금|화/.test(daysText) ? "화금반" : "월목반";
+      return `${level} ${dayGroup}`;
+    }
+
+    function avg(values) {
+      const nums = values.filter((value) => Number.isFinite(value));
+      if (!nums.length) return null;
+      return nums.reduce((sum, value) => sum + value, 0) / nums.length;
+    }
+
+    function pct(score, max) {
+      if (!max) return 0;
+      return Math.round((Number(score) / Number(max)) * 100);
+    }
+
+    function memorizedWordTotal(wordTests) {
+      return wordTests.reduce((sum, item) => sum + (Number(item.memorized) || 0), 0);
+    }
+
+    function formatScore(value) {
+      return Number.isFinite(value) ? `${Math.round(value)}점` : "-";
+    }
+
+    function recordsFor(studentId, collection) {
+      return data[collection].filter((item) => item.studentId === studentId && (item.month || item.date?.slice(0, 7)) === selectedMonth);
+    }
+
+    function indexedRecordsFor(studentId, collection) {
+      return data[collection]
+        .map((item, index) => ({ item, index }))
+        .filter(({ item }) => item.studentId === studentId && (item.month || item.date?.slice(0, 7)) === selectedMonth);
+    }
+
+    function monthlyFor(studentId) {
+      return recordsFor(studentId, "monthlyTests");
+    }
+
+    function wordsFor(studentId) {
+      return recordsFor(studentId, "wordTests").sort((a, b) => a.date.localeCompare(b.date));
+    }
+
+    function progressFor(studentId) {
+      return recordsFor(studentId, "progressLogs").sort((a, b) => a.date.localeCompare(b.date));
+    }
+
+    function counselingFor(studentId) {
+      return indexedRecordsFor(studentId, "counselingRecords")
+        .sort((a, b) => a.item.date.localeCompare(b.item.date));
+    }
+
+    function dailyStatusFor(studentId, date = dashboardDate) {
+      return data.dailyStatuses.find((item) => item.studentId === studentId && item.date === date);
+    }
+
+    function recordsOnDate(studentId, collection, date = dashboardDate) {
+      return data[collection].filter((item) => item.studentId === studentId && item.date === date);
+    }
+
+    function textbookById(bookId) {
+      return data.textbooks.find((book) => book.id === bookId);
+    }
+
+    function usesLinkedTextbook(category) {
+      return BOOK_LINKED_PROGRESS_CATEGORIES.includes(category);
+    }
+
+    function extractUnit(value) {
+      const match = String(value || "").match(/unit\s*0*(\d+)/i);
+      return match ? Number(match[1]) : 0;
+    }
+
+    function normalizeUnits(value) {
+      const raw = Array.isArray(value) ? value : [value];
+      return [...new Set(raw.map((item) => Number(item)).filter((item) => Number.isFinite(item) && item > 0))]
+        .sort((a, b) => a - b);
+    }
+
+    function unitsForRecord(record) {
+      return normalizeUnits(record?.units?.length ? record.units : record?.unit || extractUnit(record?.lesson));
+    }
+
+    function unitListLabel(units) {
+      const normalized = normalizeUnits(units);
+      if (!normalized.length) return "";
+      return `Unit ${normalized.map((unit) => String(unit).padStart(2, "0")).join(", ")}`;
+    }
+
+    function normalizeWordUnitText(value) {
+      const text = String(value || "").trim();
+      if (!text) return "";
+      if (/^unit\b/i.test(text)) return text.replace(/^unit\s*/i, "Unit ");
+      if (/^\d+(?:\s*[-~,\/]\s*\d+)*$/.test(text)) return `Unit ${text.replace(/\s+/g, "")}`;
+      return text;
+    }
+
+    function inferCategoryFromText(value) {
+      const text = String(value || "").toLowerCase();
+      if (text.includes("grammar") || text.includes("문법")) return "문법";
+      if (text.includes("listening") || text.includes("듣기")) return "듣기";
+      if (text.includes("word") || text.includes("voca") || text.includes("단어")) return "단어";
+      return "독해";
+    }
+
+    function inferBookIdFromText(value, books = data.textbooks) {
+      const text = String(value || "").toLowerCase();
+      const match = books.find((book) => text.includes(String(book.name || "").toLowerCase()));
+      if (match) return match.id;
+      if (text.includes("subject links")) return books.find((book) => book.name.toLowerCase().includes("subject links"))?.id || "";
+      if (text.includes("grammar")) return books.find((book) => book.name.toLowerCase().includes("grammar"))?.id || "";
+      if (text.includes("listening")) return books.find((book) => book.name.toLowerCase().includes("listening"))?.id || "";
+      if (text.includes("word") || text.includes("voca") || text.includes("단어")) return books.find((book) => book.category === "단어")?.id || "";
+      return "";
+    }
+
+    function textbookLabel(book) {
+      if (!book) return "-";
+      return `[${book.category}] ${book.name} · ${book.chapter}`;
+    }
+
+    function sortedTextbooks() {
+      return [...data.textbooks].sort((a, b) => {
+        const categoryDiff = BOOK_CATEGORIES.indexOf(a.category) - BOOK_CATEGORIES.indexOf(b.category);
+        if (categoryDiff) return categoryDiff;
+        return textbookLabel(a).localeCompare(textbookLabel(b), "ko");
+      });
+    }
+
+    function wordTextbooks(selectedBookId = "") {
+      const books = sortedTextbooks().filter((book) => book.category === "단어");
+      const selected = textbookById(selectedBookId);
+      if (selected && !books.some((book) => book.id === selected.id)) return [selected, ...books];
+      return books;
+    }
+
+    function wordTestLabel(record) {
+      const book = textbookById(record?.bookId);
+      const unit = Number(record?.unit) || extractUnit(record?.unitText || record?.range);
+      const unitText = normalizeWordUnitText(record?.unitText || (unit ? `Unit ${String(unit).padStart(2, "0")}` : ""));
+      if (book && unitText) return `${textbookLabel(book)} ${unitText}`;
+      if (book) return textbookLabel(book);
+      return record?.range || "-";
+    }
+
+    function lessonLabel(record) {
+      const book = textbookById(record?.bookId);
+      const units = unitsForRecord(record);
+      if (book && units.length) return `${textbookLabel(book)} ${unitListLabel(units)}`;
+      if (book) return textbookLabel(book);
+      if (record?.manualLesson) return `[${record.category || "수기"}] ${record.manualLesson}`;
+      return record?.lesson || "-";
+    }
+
+    function reportTextbookLabel(book) {
+      if (!book) return "";
+      const chapter = book.chapter && book.chapter !== "기본" ? ` ${book.chapter}` : "";
+      return `${book.name}${chapter}`.trim();
+    }
+
+    function reportWordRangeLabel(record) {
+      const book = textbookById(record?.bookId);
+      const unit = Number(record?.unit) || extractUnit(record?.unitText || record?.range);
+      const unitText = normalizeWordUnitText(record?.unitText || (unit ? `Unit ${String(unit).padStart(2, "0")}` : ""));
+      if (book && unitText) return `${book.name} ${unitText}`;
+      if (book) return book.name;
+      return String(record?.range || "-").replace(/^\[[^\]]+\]\s*/, "").replace(/\s*·\s*/g, " ");
+    }
+
+    function reportLessonLabel(record) {
+      const book = textbookById(record?.bookId);
+      const units = unitsForRecord(record);
+      if (book && units.length) return `${reportTextbookLabel(book)} ${unitListLabel(units)}`;
+      if (book) return reportTextbookLabel(book);
+      return String(record?.manualLesson || record?.lesson || "-").replace(/^\[[^\]]+\]\s*/, "").replace(/\s*·\s*/g, " ");
+    }
+
+    function progressReportText(items, formatter) {
+      const values = items
+        .map((item) => formatter(item))
+        .map((value) => String(value || "").trim())
+        .filter((value) => value && value !== "-");
+      return values.length ? values.join("<br>") : "";
+    }
+
+    function progressTestText(item) {
+      const memo = String(item?.memo || "").trim();
+      const score = memo.match(/\d+(?:\.\d+)?\s*\/\s*\d+(?:\.\d+)?/);
+      if (score) return score[0].replace(/\s+/g, "");
+      if (/test|시험|테스트/i.test(memo)) return memo;
+      return "";
+    }
+
+    function monthlyReportScore(section, tests) {
+      const row = tests.find((item) => item.section === section);
+      if (!row || row.score === "" || row.score === undefined) return "";
+      const max = section === "문법" && Number(row.score) <= 25 ? 25 : 100;
+      return `${row.score}/${max}`;
+    }
+
+    function textbookProgress(studentId, bookId) {
+      const book = textbookById(bookId);
+      if (!book) return { doneUnit: 0, totalUnits: 0, percent: 0 };
+      const doneUnit = Math.max(0, ...data.progressLogs
+        .filter((log) => log.studentId === studentId && log.bookId === bookId)
+        .flatMap((log) => unitsForRecord(log)));
+      const percentValue = Math.min(100, Math.round((doneUnit / book.totalUnits) * 100));
+      return { doneUnit, totalUnits: book.totalUnits, percent: percentValue };
+    }
+
+    function observationFor(studentId) {
+      return data.observations.find((item) => item.studentId === studentId && item.month === selectedMonth);
+    }
+
+    function summaryFor(studentId) {
+      const tests = monthlyFor(studentId);
+      const reportTests = tests.filter((item) => MONTHLY_REPORT_SECTIONS.includes(item.section));
+      const wordTests = wordsFor(studentId);
+      const progress = progressFor(studentId);
+      const monthlyAvg = avg(reportTests.map((item) => Number(item.score)));
+      const previousAvg = avg(reportTests.map((item) => Number(item.previous)));
+      const wordAvg = avg(wordTests.map((item) => pct(item.score, item.max)));
+      const missingHomework = progress.filter((item) => isHomeworkMissing(item.homework)).length;
+      const hasComment = Boolean(observationFor(studentId));
+      const risk = (monthlyAvg !== null && monthlyAvg < 75) || (wordAvg !== null && wordAvg < 80) || missingHomework >= 2 || !hasComment;
+      return { tests: reportTests, wordTests, progress, monthlyAvg, previousAvg, wordAvg, missingHomework, hasComment, risk };
+    }
+
+    function statusBadge(label, tone = "ok") {
+      const className = tone === "risk" ? "status risk" : tone === "warn" ? "status warn" : tone === "neutral" ? "status neutral" : "status";
+      return `<span class="${className}">${label}</span>`;
+    }
+
+    function studentInitial(name) {
+      return Array.from(String(name || "학"))[0] || "학";
+    }
+
+    function progressStatusByCategory(progress, category) {
+      return progress.some((item) => item.category === category)
+        ? statusBadge("완료")
+        : statusBadge("입력전", "warn");
+    }
+
+    function isHomeworkSkipped(value) {
+      return !String(value || "").trim() || String(value || "").trim() === "-";
+    }
+
+    function isHomeworkMissing(value) {
+      const text = String(value || "").trim();
+      return Boolean(text) && text !== "-" && text !== "완료";
+    }
+
+    function homeworkStatus(progress) {
+      if (!progress.length) return statusBadge("입력전", "warn");
+      const homeworkValues = progress.map((item) => item.homework || "");
+      if (homeworkValues.every(isHomeworkSkipped)) return statusBadge("-", "neutral");
+      if (homeworkValues.some((value) => /미제출|미완료/.test(value) && !/일부/.test(value))) return statusBadge("미제출", "risk");
+      if (homeworkValues.some((value) => /일부/.test(value))) return statusBadge("일부", "warn");
+      return statusBadge("완료");
+    }
+
+    function attendanceValue(studentId) {
+      const daily = dailyStatusFor(studentId);
+      if (daily?.attendance) return daily.attendance;
+      const hasDailyRecord = recordsOnDate(studentId, "wordTests").length || recordsOnDate(studentId, "progressLogs").length;
+      return hasDailyRecord ? "출석" : "미확인";
+    }
+
+    function renderSelectors() {
+      $("#monthInput").value = selectedMonth;
+      $("#studentSelect").innerHTML = data.students.map((item) => `<option value="${item.id}">${item.name}</option>`).join("");
+      $("#studentSelect").value = selectedStudentId;
+    }
+
+    function renderDailyStatus() {
+      $("#dailyDateInput").value = dashboardDate;
+      $("#dailySearchInput").value = dashboardSearch;
+      const keyword = dashboardSearch.trim().toLowerCase();
+      const students = data.students.filter((item) => {
+        const target = `${item.name} ${item.school} ${item.grade} ${item.days}`.toLowerCase();
+        return !keyword || target.includes(keyword);
+      });
+
+      $("#dailyStatusTable").innerHTML = students.length
+        ? students.map((item) => {
+          const daily = dailyStatusFor(item.id);
+          const dayProgress = recordsOnDate(item.id, "progressLogs");
+          const attendance = daily?.attendance || attendanceValue(item.id);
+          return `
+            <tr>
+              <td>
+                <div class="daily-student">
+                  <div class="student-avatar">${studentInitial(item.name)}</div>
+                  <div>
+                    <strong>${item.name}</strong>
+                    <span>${item.grade || "-"} · ${item.days || "-"}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <input class="daily-time-input" type="time" value="${daily?.arrivalTime || ""}" data-daily-time="${item.id}" aria-label="${item.name} 입실 시각">
+              </td>
+              <td>
+                <select class="daily-attendance-select" data-daily-attendance="${item.id}" aria-label="${item.name} 출석 상태">
+                  ${["미확인", "출석", "지각", "결석"].map((option) => `<option value="${option}" ${attendance === option ? "selected" : ""}>${option}</option>`).join("")}
+                </select>
+              </td>
+              <td>${progressStatusByCategory(dayProgress, "독해")}</td>
+              <td>${progressStatusByCategory(dayProgress, "문법")}</td>
+              <td>${homeworkStatus(dayProgress)}</td>
+              <td><button class="daily-action-button" type="button" data-daily-student="${item.id}" title="자료 입력으로 이동" aria-label="${item.name} 자료 입력으로 이동">⋯</button></td>
+            </tr>
+          `;
+        }).join("")
+        : `<tr><td colspan="7">검색 결과가 없습니다.</td></tr>`;
+    }
+
+    function saveDailyStatus(studentId, updates) {
+      if (!studentId || !dashboardDate) return;
+      let record = data.dailyStatuses.find((item) => item.studentId === studentId && item.date === dashboardDate);
+      if (!record) {
+        record = { studentId, date: dashboardDate, arrivalTime: "", attendance: "미확인" };
+        data.dailyStatuses.push(record);
+      }
+      Object.assign(record, updates);
+      saveData();
+      renderDailyStatus();
+    }
+
+    function openInputForStudent(studentId) {
+      selectedStudentId = studentId;
+      renderAll();
+      const inputButton = $(`.nav button[data-view="inputView"]`);
+      inputButton?.click();
+    }
+
+    function renderMetrics() {
+      const summaries = data.students.map((item) => summaryFor(item.id));
+      const reportsReady = summaries.filter((item) => item.tests.length >= 2 && item.wordTests.length && item.progress.length && item.hasComment).length;
+      const riskCount = summaries.filter((item) => item.risk).length;
+      const monthlyAvg = avg(summaries.map((item) => item.monthlyAvg));
+      const delta = avg(summaries.map((item) => item.monthlyAvg !== null && item.previousAvg !== null ? item.monthlyAvg - item.previousAvg : null));
+
+      const metrics = [
+        ["관리 학생", `${data.students.length}명`, `${monthLabel(selectedMonth)} 기준`],
+        ["리포트 준비", `${reportsReady}명`, "성적, 단어, 진도, 코멘트 입력 완료"],
+        ["확인 필요", `${riskCount}명`, "점수, 숙제, 코멘트 누락 기준"],
+        ["월말 평균", formatScore(monthlyAvg), `지난달 대비 ${delta >= 0 ? "+" : ""}${Number.isFinite(delta) ? Math.round(delta) : 0}점`]
+      ];
+
+      $("#metricGrid").innerHTML = metrics.map(([label, value, sub]) => `
+        <article class="metric">
+          <div class="label">${label}</div>
+          <div class="value">${value}</div>
+          <div class="sub">${sub}</div>
+        </article>
+      `).join("");
+    }
+
+    function renderAttention() {
+      const rows = data.students.map((item) => {
+        const summary = summaryFor(item.id);
+        let status = "안정권";
+        let className = "status";
+        if (!summary.hasComment || summary.tests.length < 2) {
+          status = "자료 필요";
+          className = "status warn";
+        }
+        if (summary.risk) {
+          status = "확인 필요";
+          className = "status risk";
+        }
+        return { item, summary, status, className };
+      });
+
+      $("#attentionTable").innerHTML = rows.map(({ item, summary, status, className }) => `
+        <tr>
+          <td><strong>${item.name}</strong><br><span class="muted">${item.grade} · ${item.days}</span></td>
+          <td>${formatScore(summary.monthlyAvg)}</td>
+          <td>${formatScore(summary.wordAvg)}</td>
+          <td>${summary.missingHomework}회</td>
+          <td><span class="${className}">${status}</span></td>
+        </tr>
+      `).join("");
+    }
+
+    function renderSectionBars() {
+      const sections = MONTHLY_REPORT_SECTIONS;
+      $("#sectionBars").innerHTML = sections.map((section) => {
+        const sectionAvg = avg(data.monthlyTests.filter((item) => item.month === selectedMonth && item.section === section).map((item) => Number(item.score)));
+        const width = Math.max(0, Math.min(100, sectionAvg || 0));
+        return `
+          <div class="bar-line">
+            <span>${section}</span>
+            <div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div>
+            <span>${formatScore(sectionAvg)}</span>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderClassOverview() {
+      const groups = ["초등부 월목반", "초등부 화금반", "중등부 월목반", "중등부 화금반"];
+      $("#classOverview").innerHTML = groups.map((group) => {
+        const students = data.students
+          .filter((item) => classGroupFor(item) === group)
+          .sort((a, b) => a.name.localeCompare(b.name, "ko"));
+
+        const body = students.length
+          ? students.map((item) => {
+            const summary = summaryFor(item.id);
+            const statusClass = summary.risk ? "status risk" : "status";
+            const statusText = summary.risk ? "확인 필요" : "안정권";
+            return `
+              <article class="class-student">
+                <div class="class-student-top">
+                  <strong>${item.name}</strong>
+                  <span class="${statusClass}">${statusText}</span>
+                </div>
+                <div class="class-student-stats">
+                  <span>${item.grade} · ${item.days}</span>
+                  <span>월말 ${formatScore(summary.monthlyAvg)} / 단어 ${formatScore(summary.wordAvg)}</span>
+                </div>
+              </article>
+            `;
+          }).join("")
+          : `<div class="empty">등록된 학생이 없습니다.</div>`;
+
+        return `
+          <article class="class-card">
+            <div class="class-card-head">
+              <h3>${group}</h3>
+              <span class="status">${students.length}명</span>
+            </div>
+            <div class="class-student-list">${body}</div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderStudents() {
+      $("#studentList").innerHTML = data.students.map((item) => {
+        const summary = summaryFor(item.id);
+        return `
+          <article class="student-row">
+            <div>
+              <strong>${item.name}</strong>
+              <span>${item.school} · ${item.grade} · ${item.days}</span>
+            </div>
+            <div>
+              <span class="${summary.risk ? "status risk" : "status"}">${summary.risk ? "확인 필요" : "안정권"}</span>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderRecent() {
+      const active = student();
+      if (!active) {
+        $("#recentTable").innerHTML = `<tr><td colspan="5">학생을 먼저 추가해주세요.</td></tr>`;
+        return;
+      }
+
+      const rows = [
+        ...indexedRecordsFor(active.id, "monthlyTests").map(({ item, index }) => ({
+          type: "monthly",
+          index,
+          groupDate: "월말평가",
+          sortDate: `${selectedMonth}-99`,
+          cells: ["월말", item.section, item.range, `${item.score}점 / 지난달 ${item.previous}점`]
+        })),
+        ...indexedRecordsFor(active.id, "wordTests").sort((a, b) => a.item.date.localeCompare(b.item.date)).map(({ item, index }) => ({
+          type: "word",
+          index,
+          groupDate: item.date,
+          sortDate: item.date,
+          cells: ["단어", item.date, wordTestLabel(item), `${item.score}/${item.max} · 암기 ${Number(item.memorized) || 0}개`]
+        })),
+        ...indexedRecordsFor(active.id, "progressLogs").sort((a, b) => a.item.date.localeCompare(b.item.date)).map(({ item, index }) => ({
+          type: "progress",
+          index,
+          groupDate: item.date,
+          sortDate: item.date,
+          cells: ["진도", item.date, lessonLabel(item), `${item.homework} · ${item.memo}`]
+        }))
+      ].sort((a, b) => a.sortDate.localeCompare(b.sortDate) || a.type.localeCompare(b.type));
+
+      $("#recentTable").innerHTML = rows.length
+        ? rows.reduce((html, row, index) => {
+          const previous = rows[index - 1];
+          const group = previous?.groupDate === row.groupDate ? "" : `<tr class="date-group-row"><td colspan="5">${dateLabel(row.groupDate)}</td></tr>`;
+          return `${html}${group}
+            <tr>
+              ${row.cells.map((cell) => `<td>${cell}</td>`).join("")}
+              <td>
+                <div class="inline-actions">
+                  <button class="tiny-button" type="button" data-action="edit" data-type="${row.type}" data-index="${row.index}">수정</button>
+                  <button class="tiny-button danger-text" type="button" data-action="delete" data-type="${row.type}" data-index="${row.index}">삭제</button>
+                </div>
+              </td>
+            </tr>`;
+        }, "")
+        : `<tr><td colspan="5">이번달 입력 내역이 아직 없습니다.</td></tr>`;
+    }
+
+    function renderCounseling() {
+      const active = student();
+      if (!active) {
+        $("#counselingTable").innerHTML = `<tr><td colspan="7">학생을 먼저 추가해주세요.</td></tr>`;
+        return;
+      }
+
+      const rows = counselingFor(active.id);
+      $("#counselingTable").innerHTML = rows.length
+        ? rows.map(({ item, index }) => `
+          <tr>
+            <td>${dateLabel(item.date)}</td>
+            <td><span class="status">${item.type || "-"}</span><br><span class="muted">${item.target || "-"}</span></td>
+            <td>${item.topic || "-"}</td>
+            <td>${item.content || "-"}</td>
+            <td>${item.action || "-"}</td>
+            <td>${item.followDate ? dateLabel(item.followDate) : "-"}</td>
+            <td>
+              <div class="inline-actions">
+                <button class="tiny-button" type="button" data-counseling-action="edit" data-index="${index}">수정</button>
+                <button class="tiny-button danger-text" type="button" data-counseling-action="delete" data-index="${index}">삭제</button>
+              </div>
+            </td>
+          </tr>
+        `).join("")
+        : `<tr><td colspan="7">이번달 상담자료가 아직 없습니다.</td></tr>`;
+    }
+
+    function collectionForEditType(type) {
+      return {
+        monthly: "monthlyTests",
+        word: "wordTests",
+        progress: "progressLogs"
+      }[type];
+    }
+
+    function updateEditUi() {
+      const monthlyEditing = editingState.type === "monthly";
+      const wordEditing = editingState.type === "word";
+      const progressEditing = editingState.type === "progress";
+
+      $("#saveMonthlyButton").textContent = monthlyEditing ? "월말테스트 수정 저장" : "월말테스트 저장";
+      $("#saveWordButton").textContent = wordEditing ? "단어테스트 수정 저장" : "단어테스트 저장";
+      $("#saveProgressButton").textContent = progressEditing ? "진도 수정 저장" : "진도 저장";
+      $("#monthlyEditNote").classList.toggle("active", monthlyEditing);
+      $("#wordEditNote").classList.toggle("active", wordEditing);
+      $("#progressEditNote").classList.toggle("active", progressEditing);
+      $("#monthlyPanel").classList.toggle("editing", monthlyEditing);
+      $("#wordPanel").classList.toggle("editing", wordEditing);
+      $("#progressPanel").classList.toggle("editing", progressEditing);
+    }
+
+    function resetEditState() {
+      editingState = { type: "", index: -1 };
+      updateEditUi();
+    }
+
+    function updateCounselingEditUi() {
+      const editing = counselingEditIndex >= 0;
+      $("#saveCounselingButton").textContent = editing ? "상담자료 수정 저장" : "상담자료 저장";
+      $("#counselingEditNote").classList.toggle("active", editing);
+      $("#counselingPanel").classList.toggle("editing", editing);
+    }
+
+    function resetCounselingEdit() {
+      counselingEditIndex = -1;
+      updateCounselingEditUi();
+    }
+
+    function ensureSelectOption(select, value) {
+      if (!value || Array.from(select.options).some((option) => option.value === value)) return;
+      select.add(new Option(value, value));
+    }
+
+    function editRecentRecord(type, index) {
+      const collection = collectionForEditType(type);
+      const record = data[collection]?.[index];
+      if (!record) return;
+
+      editingState = { type, index };
+      selectedStudentId = record.studentId;
+      selectedMonth = record.month || record.date.slice(0, 7);
+      renderAll();
+
+      if (type === "monthly") {
+        const sectionSelect = $("#testSection");
+        ensureSelectOption(sectionSelect, record.section);
+        sectionSelect.value = record.section;
+        $("#testRange").value = record.range;
+        $("#testScore").value = record.score;
+        $("#testPrev").value = record.previous;
+      }
+
+      if (type === "word") {
+        $("#wordDate").value = record.date;
+        const bookId = record.bookId || inferBookIdFromText(record.range);
+        const unit = record.unitText || (Number(record.unit) || extractUnit(record.range) ? `Unit ${String(Number(record.unit) || extractUnit(record.range)).padStart(2, "0")}` : "");
+        renderWordBookOptions(bookId);
+        renderWordUnitOptions(unit);
+        $("#wordScore").value = record.score;
+        $("#wordMax").value = record.max;
+        $("#wordMemorized").value = Number(record.memorized) || "";
+      }
+
+      if (type === "progress") {
+        $("#progressDate").value = record.date;
+        const bookId = record.bookId || inferBookIdFromText(record.lesson);
+        const category = record.category || textbookById(bookId)?.category || inferCategoryFromText(record.lesson);
+        $("#progressCategory").value = category;
+        updateProgressInputMode();
+        const units = unitsForRecord(record);
+        if (usesLinkedTextbook(category) && bookId) {
+          $("#progressBook").value = bookId;
+          renderProgressUnitOptions(units.length ? units : [1]);
+        } else {
+          $("#progressManual").value = record.manualLesson || record.lesson || "";
+        }
+        $("#progressHomework").value = record.homework;
+        $("#progressMemo").value = record.memo;
+      }
+
+      updateEditUi();
+      const panelId = { monthly: "monthlyPanel", word: "wordPanel", progress: "progressPanel" }[type];
+      const focusId = { monthly: "testRange", word: "wordBook", progress: "progressBook" }[type];
+      $(`#${panelId}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(() => $(`#${focusId}`)?.focus(), 250);
+    }
+
+    function deleteRecentRecord(type, index) {
+      const collection = collectionForEditType(type);
+      if (!collection || !data[collection]?.[index]) return;
+      if (!window.confirm("이 입력 내역을 삭제할까요?")) return;
+      data[collection].splice(index, 1);
+      resetEditState();
+      saveData();
+      renderAll();
+    }
+
+    function loadObservationForm() {
+      const obs = observationFor(selectedStudentId) || {};
+      $("#obsAttitude").value = obs.attitude || "";
+      $("#obsStrength").value = obs.strength || "";
+      $("#obsWeakness").value = obs.weakness || "";
+      $("#obsPlan").value = obs.plan || "";
+      $("#commentPreview").value = obs.comment || buildComment();
+      $("#aiDraftStatus").textContent = "AI 연결 전 미리보기";
+    }
+
+    function observationInput() {
+      return {
+        attitude: $("#obsAttitude")?.value.trim() || "",
+        strength: $("#obsStrength")?.value.trim() || "",
+        weakness: $("#obsWeakness")?.value.trim() || "",
+        plan: $("#obsPlan")?.value.trim() || ""
+      };
+    }
+
+    function scoreChangeText(row) {
+      if (!row) return "자료 입력이 필요합니다.";
+      const score = Number(row.score);
+      const previous = Number(row.previous);
+      if (!Number.isFinite(score) || !Number.isFinite(previous)) return `${row.score}점`;
+      const diff = Math.round((score - previous) * 10) / 10;
+      if (Math.abs(diff) < 1) return `${score}점으로 지난달과 비슷한 수준입니다.`;
+      return `${score}점으로 지난달보다 ${Math.abs(diff)}점 ${diff > 0 ? "상승했습니다" : "하락했습니다"}.`;
+    }
+
+    function topProgressItems(progress, category, limit = 3) {
+      return progress
+        .filter((item) => item.category === category)
+        .slice(-limit)
+        .map(lessonLabel)
+        .filter((value) => value && value !== "-");
+    }
+
+    function buildAiAnalysisDraft() {
+      const active = student();
+      if (!active) return "학생을 먼저 추가해주세요.";
+
+      const summary = summaryFor(active.id);
+      const obs = observationInput();
+      const tests = monthlyFor(active.id);
+      const reading = tests.find((item) => item.section === "독해");
+      const grammar = tests.find((item) => item.section === "문법");
+      const wordTests = wordsFor(active.id);
+      const progress = progressFor(active.id);
+      const counseling = counselingFor(active.id).map(({ item }) => item);
+      const wordScores = wordTests.map((item) => pct(item.score, item.max)).filter((value) => Number.isFinite(value));
+      const wordAvg = avg(wordScores);
+      const memorizedTotal = memorizedWordTotal(wordTests);
+      const lowWordTests = wordTests.filter((item) => pct(item.score, item.max) < 80);
+      const perfectWordTests = wordTests.filter((item) => Number(item.score) === Number(item.max));
+      const classDays = new Set(progress.map((item) => item.date)).size;
+      const missingHomework = progress.filter((item) => isHomeworkMissing(item.homework));
+      const readingItems = topProgressItems(progress, "독해");
+      const grammarItems = topProgressItems(progress, "문법");
+      const recentCounseling = counseling.slice(-2).map((item) => `${item.topic || item.type}: ${item.content || item.action || ""}`.trim()).filter(Boolean);
+      const readingText = reading ? `독해는 ${scoreChangeText(reading)}` : "독해 월말평가 자료는 아직 입력이 필요합니다.";
+      const grammarText = grammar ? `문법은 ${scoreChangeText(grammar)}` : "문법 월말평가 자료는 아직 입력이 필요합니다.";
+      const wordText = wordTests.length
+        ? `단어테스트는 ${wordTests.length}회 입력되었고 평균은 ${Math.round(wordAvg)}점입니다. 이번달 누적 암기 단어는 ${memorizedTotal}개이며, 만점 기록은 ${perfectWordTests.length}회, 80점 미만 기록은 ${lowWordTests.length}회입니다.`
+        : "단어테스트 자료가 아직 없어 암기 흐름 분석은 추가 입력 후 더 정확해집니다.";
+      const progressText = progress.length
+        ? `이번달 수업진도는 ${classDays}일 기록되어 있으며, 독해는 ${readingItems.join(", ") || "추가 기록 필요"}, 문법은 ${grammarItems.join(", ") || "추가 기록 필요"}까지 진행했습니다.`
+        : "일일 진도 기록이 아직 없어 교재별 진행 흐름은 추가 입력이 필요합니다.";
+      const homeworkText = progress.length
+        ? missingHomework.length
+          ? `숙제는 ${missingHomework.length}회 확인이 필요해 복습 루틴을 조금 더 안정적으로 잡아주는 것이 좋겠습니다.`
+          : "숙제 기록은 안정적으로 완료되어 수업 후 복습 습관이 잘 유지되고 있습니다."
+        : "숙제 완료 여부는 진도 입력 후 함께 확인할 수 있습니다.";
+      const counselingText = recentCounseling.length ? `상담 기록에서는 ${recentCounseling.join(" / ")} 내용이 확인됩니다.` : "";
+
+      return `${active.name} 학생은 ${monthLabel(selectedMonth)} 동안 ${obs.attitude || "수업 태도에 대한 추가 관찰이 필요하지만"} 전반적인 학습 흐름을 만들어가고 있습니다.
+
+성적 면에서는 ${readingText} ${grammarText} ${wordText}
+
+진도와 과제 수행을 함께 보면 ${progressText} ${homeworkText} ${counselingText}
+
+강점으로는 ${obs.strength || "수업 중 안정적으로 유지되는 부분을 조금 더 구체적으로 기록하면 좋겠습니다."} 이 부분을 다음달에도 유지하면 독해 정확도와 단어 활용력이 함께 올라갈 수 있습니다.
+
+보완할 부분은 ${obs.weakness || "오답이 반복되는 유형을 구체적으로 확인하는 것입니다."} 특히 틀린 문제를 바로 넘기기보다 왜 틀렸는지 표시하고, 같은 유형을 짧게 다시 풀어보는 과정이 필요합니다.
+
+다음달에는 ${obs.plan || "월말평가 오답, 누적 단어, 문장 구조 복습을 함께 진행하는 방향"}으로 학습하면 좋겠습니다. 가정에서는 단어 암기 여부를 짧게 확인하고, 오답 문장을 소리 내어 한 번 더 읽는 복습을 도와주시면 학습 효과가 더 안정적으로 이어질 수 있습니다.`;
+    }
+
+    function buildComment() {
+      const active = student();
+      const summary = summaryFor(active?.id);
+      const saved = observationFor(active?.id);
+      const input = observationInput();
+      const obs = {
+        attitude: input.attitude || saved?.attitude || "",
+        strength: input.strength || saved?.strength || "",
+        weakness: input.weakness || saved?.weakness || "",
+        plan: input.plan || saved?.plan || ""
+      };
+      const monthlyText = summary?.monthlyAvg !== null ? `이번달 월말테스트 평균은 ${Math.round(summary.monthlyAvg)}점` : "이번달 월말테스트 자료는 추가 입력이 필요";
+      const wordText = summary?.wordAvg !== null ? `단어테스트 평균은 ${Math.round(summary.wordAvg)}점` : "단어테스트 자료는 추가 입력이 필요";
+      return `${active?.name || "학생"} 학생은 ${monthLabel(selectedMonth)} 수업에서 ${obs.attitude || "전반적인 학습 태도 기록이 필요합니다."} ${obs.strength || "강점을 구체적으로 입력해주세요."} ${monthlyText}이며, ${wordText}입니다. ${obs.weakness || "보완할 부분을 입력하면 더 정확한 코멘트가 완성됩니다."} 앞으로는 ${obs.plan || "다음달 학습 방향을 입력해주세요."}`;
+    }
+
+    function generateAiAnalysisDraft() {
+      const button = $("#aiAnalysisButton");
+      const status = $("#aiDraftStatus");
+      button.disabled = true;
+      status.textContent = "이번달 데이터를 정리하는 중...";
+      window.setTimeout(() => {
+        $("#commentPreview").value = buildAiAnalysisDraft();
+        status.textContent = "초안 생성 완료";
+        button.disabled = false;
+        renderReport();
+      }, 300);
+    }
+
+    function renderReport() {
+      const active = student();
+      if (!active) {
+        $("#reportCard").innerHTML = `<div class="empty">학생을 먼저 추가해주세요.</div>`;
+        return;
+      }
+
+      const tests = monthlyFor(active.id);
+      const wordTests = wordsFor(active.id);
+      const progress = progressFor(active.id);
+      const summary = summaryFor(active.id);
+      const sections = MONTHLY_REPORT_SECTIONS;
+      const savedObservation = observationFor(active.id);
+      const comment = $("#commentPreview")?.value || savedObservation?.comment || buildComment();
+      const reportScores = sections.map((section) => tests.find((item) => item.section === section)).filter(Boolean);
+      const reportMonthlyAvg = avg(reportScores.map((item) => Number(item.score)));
+      const reportPreviousAvg = avg(reportScores.map((item) => Number(item.previous)));
+      const memorizedTotal = memorizedWordTotal(wordTests);
+
+      const scoreRows = sections.map((section) => {
+        const row = tests.find((item) => item.section === section);
+        return `
+          <tr>
+            <td>${section}</td>
+            <td>${row?.range || "-"}</td>
+            <td>${row ? `${row.score}점` : "-"}</td>
+            <td>${row ? `${row.previous}점` : "-"}</td>
+          </tr>
+        `;
+      }).join("") + `
+        <tr>
+          <td>단어</td>
+          <td>이번달 누적 암기 단어</td>
+          <td>${memorizedTotal ? `${memorizedTotal}개` : "-"}</td>
+          <td>-</td>
+        </tr>
+      `;
+
+      const wordColumns = wordTests.slice(-10).map((item) => {
+        const scorePct = pct(item.score, item.max);
+        return `<div class="column" style="height:${Math.max(4, scorePct)}%"><span>${item.score}</span></div>`;
+      }).join("");
+
+      const wordLabels = wordTests.slice(-10).map((item) => `<span>${item.date.slice(5)}</span>`).join("");
+
+      const compareColumns = sections.map((section) => {
+        const row = tests.find((item) => item.section === section);
+        const current = row?.score || 0;
+        const previous = row?.previous || 0;
+        return `
+          <div class="compare-group">
+            <div class="compare-bars">
+              <div class="compare-bar" style="height:${Math.max(4, current)}%"><span>${current || "-"}</span></div>
+              <div class="compare-bar gray" style="height:${Math.max(4, previous)}%"><span>${previous || "-"}</span></div>
+            </div>
+            <div class="compare-label">${section}</div>
+          </div>
+        `;
+      }).join("");
+
+      const progressDates = [...new Set([
+        ...wordTests.map((item) => item.date),
+        ...progress.map((item) => item.date)
+      ].filter(Boolean))].sort((a, b) => a.localeCompare(b));
+      const progressRows = progressDates.map((date) => {
+        const dayWords = wordTests.filter((item) => item.date === date);
+        const dayProgress = progress.filter((item) => item.date === date);
+        const byCategory = (category) => dayProgress.filter((item) => item.category === category);
+        const wordRange = progressReportText(dayWords, reportWordRangeLabel);
+        const wordScore = progressReportText(dayWords, (item) => item.score);
+        const wordMax = progressReportText(dayWords, (item) => item.max);
+        const readingProgress = progressReportText(byCategory("독해"), reportLessonLabel);
+        const readingWords = progressReportText(byCategory("단어"), (item) => item.manualLesson || item.lesson);
+        const grammarProgress = progressReportText(byCategory("문법"), reportLessonLabel);
+        const testProgress = progressReportText(dayProgress, progressTestText);
+        return `
+          <tr>
+            <td class="date-cell">${reportDateLabel(date)}</td>
+            <td class="word-range-cell">${wordRange}</td>
+            <td class="word-score-cell">${wordScore}</td>
+            <td class="word-score-cell">${wordMax}</td>
+            <td class="lesson-cell">${readingProgress}</td>
+            <td>${readingWords}</td>
+            <td class="lesson-cell">${grammarProgress}</td>
+            <td>${testProgress}</td>
+          </tr>
+        `;
+      }).join("");
+      const monthlyProgressRow = `
+        <tr class="monthly-progress-row">
+          <td colspan="4"></td>
+          <td>월말테스트</td>
+          <td>${monthlyReportScore("독해", tests)}</td>
+          <td>월말테스트</td>
+          <td>${monthlyReportScore("문법", tests)}</td>
+        </tr>
+      `;
+
+      $("#reportCard").innerHTML = `
+        <div class="report-title">SEULA ENGLISH MONTHLY TEST</div>
+        <table class="report-meta">
+          <tr>
+            <th>Name</th><td>${active.name}</td>
+            <th>School</th><td>${active.school}</td>
+            <th>Month</th><td>${monthLabel(selectedMonth)}</td>
+          </tr>
+          <tr>
+            <th>Institute</th><td>슬아영어학원</td>
+            <th>Grade</th><td>${active.grade}</td>
+            <th>Class</th><td>${active.days}</td>
+          </tr>
+        </table>
+
+        <div class="report-section-title">Score by Section</div>
+        <table class="score-table">
+          <thead>
+            <tr><th>Section</th><th>범위</th><th>이번달</th><th>지난달</th></tr>
+          </thead>
+          <tbody>
+            ${scoreRows}
+            <tr><th>Average</th><th>-</th><th>${formatScore(reportMonthlyAvg)}</th><th>${formatScore(reportPreviousAvg)}</th></tr>
+          </tbody>
+        </table>
+
+        <div class="report-section-title">Detailed Evaluation</div>
+        <div class="mini-chart">
+          <div class="chart-box">
+            <p class="chart-title">단어 TEST</p>
+            <div class="column-chart">${wordColumns || ""}</div>
+            <div class="chart-labels">${wordLabels || "<span>입력 필요</span>"}</div>
+          </div>
+          <div class="chart-box">
+            <p class="chart-title">월말평가 점수 비교</p>
+            <div class="compare-chart">${compareColumns}</div>
+            <div class="chart-legend">
+              <span class="legend-item"><i class="legend-swatch"></i>이번달</span>
+              <span class="legend-item"><i class="legend-swatch gray"></i>지난달</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="report-section-title">수업진도</div>
+        <table class="score-table progress-report-table">
+          <thead>
+            <tr>
+              <th class="date-cell">Date</th>
+              <th class="word-range-cell">단어 시험 범위</th>
+              <th colspan="2">단어시험</th>
+              <th>독해진도</th>
+              <th>독해단어</th>
+              <th>문법진도</th>
+              <th>TEST</th>
+            </tr>
+          </thead>
+          <tbody>${progressRows || `<tr><td colspan="8">진도 입력이 필요합니다.</td></tr>`}${monthlyProgressRow}</tbody>
+        </table>
+
+        <div class="report-section-title">Teacher's Comment</div>
+        <div class="comment-box">${comment}</div>
+      `;
+
+      renderChecklist();
+    }
+
+    function renderChecklist() {
+      const summary = summaryFor(selectedStudentId);
+      const items = [
+        ["월말테스트 2개 영역 이상", summary.tests.length >= 2],
+        ["단어테스트 입력", summary.wordTests.length > 0],
+        ["일일 진도표 입력", summary.progress.length > 0],
+        ["선생님 코멘트 저장", summary.hasComment],
+        ["숙제 미완료 2회 미만", summary.missingHomework < 2]
+      ];
+      $("#reportChecklist").innerHTML = items.map(([label, ok]) => `
+        <div class="bar-line" style="grid-template-columns:1fr auto;">
+          <span>${label}</span>
+          <span class="${ok ? "status" : "status warn"}">${ok ? "완료" : "확인"}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderWordBookOptions(selectedBookId = "") {
+      const books = wordTextbooks(selectedBookId);
+      const currentBookId = selectedBookId || $("#wordBook").value || books[0]?.id || "";
+      $("#wordBook").innerHTML = books.length
+        ? books.map((book) => `<option value="${book.id}">${book.name} · ${book.chapter}</option>`).join("")
+        : `<option value="">등록된 단어 교재 없음</option>`;
+      $("#wordBook").value = books.some((book) => book.id === currentBookId) ? currentBookId : books[0]?.id || "";
+      renderWordUnitOptions();
+    }
+
+    function renderWordUnitOptions(selectedUnit = "") {
+      const field = $("#wordUnit");
+      if (!field) return;
+      field.placeholder = "예: Unit 01 / 17-18 / 내신대비";
+      if (selectedUnit) field.value = normalizeWordUnitText(selectedUnit);
+    }
+
+    function updateProgressInputMode() {
+      const category = $("#progressCategory").value;
+      const linked = usesLinkedTextbook(category);
+      $("#progressBookLabel").classList.toggle("hidden", !linked);
+      $("#progressUnitLabel").classList.toggle("hidden", !linked);
+      $("#reloadBooksButton").classList.toggle("hidden", !linked);
+      $("#progressManualLabel").classList.toggle("hidden", linked);
+      $("#progressBook").disabled = !linked;
+      $("#progressUnitButton").disabled = !linked;
+      $("#progressUnitMenu").classList.add("hidden");
+      $("#progressManual").disabled = linked;
+      if (linked) renderProgressBookOptions();
+    }
+
+    function renderProgressBookOptions(selectedBookId = "") {
+      const category = $("#progressCategory").value;
+      if (!usesLinkedTextbook(category)) {
+        $("#progressBook").innerHTML = `<option value="">수기 입력</option>`;
+        $("#progressUnitMenu").innerHTML = "";
+        $("#progressUnitButton").textContent = "Unit 없음";
+        $("#progressUnitButton").disabled = true;
+        return;
+      }
+
+      const books = sortedTextbooks().filter((book) => book.category === category);
+      const currentBookId = selectedBookId || $("#progressBook").value || books[0]?.id || "";
+      $("#progressBook").innerHTML = books.length
+        ? books.map((book) => `<option value="${book.id}">${book.name} · ${book.chapter}</option>`).join("")
+        : `<option value="">등록된 교재 없음</option>`;
+      $("#progressBook").value = books.some((book) => book.id === currentBookId) ? currentBookId : books[0]?.id || "";
+      renderProgressUnitOptions();
+    }
+
+    function renderProgressUnitOptions(selectedUnits = "") {
+      const book = textbookById($("#progressBook").value);
+      if (!book) {
+        $("#progressUnitMenu").innerHTML = "";
+        $("#progressUnitButton").textContent = "Unit 없음";
+        $("#progressUnitButton").disabled = true;
+        return;
+      }
+
+      const units = Array.from({ length: book.totalUnits }, (_, index) => index + 1);
+      const selected = normalizeUnits(selectedUnits).filter((unit) => units.includes(unit));
+      const target = selected.length ? selected : [1];
+      $("#progressUnitButton").disabled = false;
+      $("#progressUnitMenu").innerHTML = units.map((unit) => `
+        <label class="unit-picker-option">
+          <input type="checkbox" value="${unit}" ${target.includes(unit) ? "checked" : ""}>
+          <span>Unit ${String(unit).padStart(2, "0")}</span>
+        </label>
+      `).join("");
+      updateProgressUnitButton();
+    }
+
+    function selectedProgressUnits() {
+      return normalizeUnits(Array.from($("#progressUnitMenu").querySelectorAll("input:checked")).map((input) => input.value));
+    }
+
+    function updateProgressUnitButton() {
+      const units = selectedProgressUnits();
+      $("#progressUnitButton").textContent = units.length ? unitListLabel(units) : "Unit 선택";
+    }
+
+    function renderBookManagement() {
+      $("#bookTable").innerHTML = data.textbooks.length
+        ? sortedTextbooks().map((book) => {
+          const usage = data.progressLogs.filter((log) => log.bookId === book.id).length;
+          return `
+            <tr>
+              <td><span class="status">${book.category}</span></td>
+              <td><strong>${book.name}</strong></td>
+              <td>${book.chapter}</td>
+              <td>${book.totalUnits}개</td>
+              <td>${usage}회</td>
+              <td>
+                <button class="tiny-button danger-text" type="button" data-book-delete="${book.id}">삭제</button>
+              </td>
+            </tr>
+          `;
+        }).join("")
+        : `<tr><td colspan="6">등록된 교재가 없습니다.</td></tr>`;
+
+      const active = student();
+      $("#bookProgressList").innerHTML = data.textbooks.length
+        ? sortedTextbooks().map((book) => {
+          const progress = textbookProgress(active?.id, book.id);
+          return `
+            <article class="book-card">
+              <div class="book-card-head">
+                <div>
+                  <strong>${textbookLabel(book)}</strong>
+                  <span class="muted">Unit ${progress.doneUnit || 0} / ${progress.totalUnits}</span>
+                </div>
+                <span class="status">${progress.percent}%</span>
+              </div>
+              <div class="progress-meter"><span style="width:${progress.percent}%"></span></div>
+            </article>
+          `;
+        }).join("")
+        : `<div class="empty">교재를 먼저 등록해주세요.</div>`;
+    }
+
+    function renderAll() {
+      if (!data.students.find((item) => item.id === selectedStudentId)) {
+        selectedStudentId = data.students[0]?.id || "";
+      }
+      renderSelectors();
+      renderDailyStatus();
+      renderWordBookOptions();
+      updateProgressInputMode();
+      renderMetrics();
+      renderAttention();
+      renderSectionBars();
+      renderClassOverview();
+      renderStudents();
+      renderBookManagement();
+      renderRecent();
+      renderCounseling();
+      loadObservationForm();
+      renderReport();
+      updateEditUi();
+      updateCounselingEditUi();
+    }
+
+    function saveMonthlyTest() {
+      const section = $("#testSection").value;
+      const record = {
+        studentId: selectedStudentId,
+        month: selectedMonth,
+        section,
+        range: $("#testRange").value || "-",
+        score: Number($("#testScore").value),
+        previous: Number($("#testPrev").value)
+      };
+      if (!selectedStudentId || !Number.isFinite(record.score) || !Number.isFinite(record.previous)) return;
+      if (editingState.type === "monthly" && data.monthlyTests[editingState.index]) {
+        data.monthlyTests[editingState.index] = record;
+      } else {
+        data.monthlyTests = data.monthlyTests.filter((item) => !(item.studentId === selectedStudentId && item.month === selectedMonth && item.section === section));
+        data.monthlyTests.push(record);
+      }
+      resetEditState();
+      saveData();
+      renderAll();
+    }
+
+    function saveWordTest() {
+      const book = textbookById($("#wordBook").value);
+      const unitText = normalizeWordUnitText($("#wordUnit").value);
+      const unit = extractUnit(unitText) || Number(String(unitText).match(/\d+/)?.[0]) || 0;
+      const memorized = Number($("#wordMemorized").value);
+      const record = {
+        studentId: selectedStudentId,
+        date: $("#wordDate").value,
+        bookId: book?.id || "",
+        unitText,
+        unit,
+        range: book && unitText ? `${textbookLabel(book)} ${unitText}` : book ? textbookLabel(book) : "-",
+        score: Number($("#wordScore").value),
+        max: Number($("#wordMax").value),
+        memorized: Number.isFinite(memorized) ? memorized : 0
+      };
+      if (!selectedStudentId || !record.date || !record.bookId || !unitText || !Number.isFinite(record.score) || !Number.isFinite(record.max)) return;
+      if (editingState.type === "word" && data.wordTests[editingState.index]) {
+        data.wordTests[editingState.index] = record;
+      } else {
+        data.wordTests.push(record);
+      }
+      resetEditState();
+      saveData();
+      renderAll();
+    }
+
+    function saveProgress() {
+      const category = $("#progressCategory").value;
+      const linked = usesLinkedTextbook(category);
+      const book = linked ? textbookById($("#progressBook").value) : null;
+      const units = linked ? selectedProgressUnits() : [];
+      const unit = Math.max(0, ...units);
+      const manualLesson = $("#progressManual").value.trim();
+      const record = linked
+        ? {
+          studentId: selectedStudentId,
+          date: $("#progressDate").value,
+          category,
+          bookId: book?.id || "",
+          unit,
+          units,
+          lesson: book && units.length ? `${textbookLabel(book)} ${unitListLabel(units)}` : "-",
+          manualLesson: "",
+          homework: $("#progressHomework").value,
+          memo: $("#progressMemo").value || "-"
+        }
+        : {
+          studentId: selectedStudentId,
+          date: $("#progressDate").value,
+          category,
+          bookId: "",
+          unit: 0,
+          units: [],
+          lesson: manualLesson,
+          manualLesson,
+          homework: $("#progressHomework").value,
+          memo: $("#progressMemo").value || "-"
+        };
+      if (!selectedStudentId || !record.date) return;
+      if (linked && (!record.bookId || !units.length)) return;
+      if (!linked && !manualLesson) return;
+      if (editingState.type === "progress" && data.progressLogs[editingState.index]) {
+        data.progressLogs[editingState.index] = record;
+      } else {
+        data.progressLogs.push(record);
+      }
+      resetEditState();
+      saveData();
+      renderAll();
+    }
+
+    function saveCounseling() {
+      const record = {
+        studentId: selectedStudentId,
+        date: $("#counselingDate").value,
+        type: $("#counselingType").value,
+        target: $("#counselingTarget").value,
+        topic: $("#counselingTopic").value.trim(),
+        content: $("#counselingContent").value.trim(),
+        action: $("#counselingAction").value.trim(),
+        followDate: $("#counselingFollowDate").value
+      };
+      if (!selectedStudentId || !record.date || !record.topic) return;
+
+      if (counselingEditIndex >= 0 && data.counselingRecords[counselingEditIndex]) {
+        data.counselingRecords[counselingEditIndex] = record;
+      } else {
+        data.counselingRecords.push(record);
+      }
+      resetCounselingEdit();
+      saveData();
+      renderAll();
+    }
+
+    function editCounseling(index) {
+      const record = data.counselingRecords[index];
+      if (!record) return;
+      counselingEditIndex = index;
+      selectedStudentId = record.studentId;
+      selectedMonth = record.date.slice(0, 7);
+      renderAll();
+      $("#counselingDate").value = record.date;
+      $("#counselingType").value = record.type || "전화";
+      $("#counselingTarget").value = record.target || "학부모";
+      $("#counselingTopic").value = record.topic || "";
+      $("#counselingContent").value = record.content || "";
+      $("#counselingAction").value = record.action || "";
+      $("#counselingFollowDate").value = record.followDate || "";
+      updateCounselingEditUi();
+      $("#counselingPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(() => $("#counselingTopic").focus(), 250);
+    }
+
+    function deleteCounseling(index) {
+      if (!data.counselingRecords[index]) return;
+      if (!window.confirm("이 상담자료를 삭제할까요?")) return;
+      data.counselingRecords.splice(index, 1);
+      resetCounselingEdit();
+      saveData();
+      renderAll();
+    }
+
+    function saveObservation() {
+      if (!selectedStudentId) return;
+      const comment = $("#commentPreview").value.trim() || buildComment();
+      data.observations = data.observations.filter((item) => !(item.studentId === selectedStudentId && item.month === selectedMonth));
+      data.observations.push({
+        studentId: selectedStudentId,
+        month: selectedMonth,
+        attitude: $("#obsAttitude").value,
+        strength: $("#obsStrength").value,
+        weakness: $("#obsWeakness").value,
+        plan: $("#obsPlan").value,
+        comment
+      });
+      saveData();
+      $("#commentPreview").value = comment;
+      renderAll();
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const area = document.createElement("textarea");
+        area.value = text;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand("copy");
+        area.remove();
+      }
+    }
+
+    function reportFileName(extension) {
+      const active = student();
+      const name = String(active?.name || "student").replace(/[\\/:*?"<>|]/g, "");
+      return `seula-${selectedMonth}-${name}-monthly-report.${extension}`;
+    }
+
+    function collectStyleText() {
+      return Array.from(document.styleSheets).map((sheet) => {
+        try {
+          return Array.from(sheet.cssRules).map((rule) => rule.cssText).join("\n");
+        } catch {
+          return "";
+        }
+      }).join("\n");
+    }
+
+    function downloadUrl(url, filename) {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      downloadUrl(url, filename);
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function canvasToBlob(canvas) {
+      return new Promise((resolve) => canvas.toBlob(resolve, "image/png", 0.96));
+    }
+
+    async function buildReportPageSvg() {
+      renderReport();
+      await document.fonts?.ready;
+      const report = $("#reportCard");
+      const clone = report.cloneNode(true);
+      clone.classList.add("one-page-export");
+      clone.id = "reportExportCard";
+      const holder = document.createElement("div");
+      holder.style.position = "fixed";
+      holder.style.left = "-10000px";
+      holder.style.top = "0";
+      holder.style.background = "#fff";
+      holder.appendChild(clone);
+      document.body.appendChild(holder);
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      const sourceWidth = Math.ceil(clone.scrollWidth);
+      const sourceHeight = Math.ceil(clone.scrollHeight);
+      const cssText = collectStyleText();
+      clone.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+      const cloneMarkup = new XMLSerializer()
+        .serializeToString(clone)
+        .replace(/&nbsp;/g, "&#160;");
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="${sourceWidth}" height="${sourceHeight}" viewBox="0 0 ${sourceWidth} ${sourceHeight}">
+          <foreignObject width="100%" height="100%">
+            <div xmlns="http://www.w3.org/1999/xhtml">
+              <style><![CDATA[${cssText}]]></style>
+              ${cloneMarkup}
+            </div>
+          </foreignObject>
+        </svg>
+      `;
+      holder.remove();
+      return { svg, sourceWidth, sourceHeight };
+    }
+
+    async function renderReportPageCanvas() {
+      const { svg, sourceWidth, sourceHeight } = await buildReportPageSvg();
+      const svgUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+      const image = new Image();
+      const loaded = new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = reject;
+      });
+      image.src = svgUrl;
+      await loaded;
+
+      const pageWidth = 1240;
+      const pageHeight = 1754;
+      const pagePadding = 36;
+      const canvas = document.createElement("canvas");
+      canvas.width = pageWidth;
+      canvas.height = pageHeight;
+      const context = canvas.getContext("2d");
+      context.fillStyle = "#fff";
+      context.fillRect(0, 0, pageWidth, pageHeight);
+      const scale = Math.min((pageWidth - pagePadding * 2) / sourceWidth, (pageHeight - pagePadding * 2) / sourceHeight);
+      const drawWidth = sourceWidth * scale;
+      const drawHeight = sourceHeight * scale;
+      const drawX = (pageWidth - drawWidth) / 2;
+      const drawY = (pageHeight - drawHeight) / 2;
+      context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+      URL.revokeObjectURL(svgUrl);
+      return canvas;
+    }
+
+    async function saveReportImage() {
+      const button = $("#saveReportImageButton");
+      const originalText = button.textContent;
+      try {
+        button.disabled = true;
+        button.textContent = "이미지 생성 중";
+        const canvas = await renderReportPageCanvas();
+        const blob = await canvasToBlob(canvas);
+        if (!blob) throw new Error("이미지 생성 실패");
+        downloadBlob(blob, reportFileName("png"));
+      } catch {
+        try {
+          const { svg } = await buildReportPageSvg();
+          downloadBlob(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }), reportFileName("svg"));
+          window.alert("PNG 저장이 브라우저 제한으로 막혀 SVG 이미지 파일로 저장했습니다.");
+        } catch {
+          window.alert("이미지 저장을 완료하지 못했습니다. PDF 저장 버튼을 이용해주세요.");
+        }
+      } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    }
+
+    async function saveReportPdf() {
+      const button = $("#saveReportPdfButton");
+      const originalText = button.textContent;
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) {
+        window.alert("PDF 저장 창을 열 수 없습니다. 팝업 차단을 해제한 뒤 다시 시도해주세요.");
+        return;
+      }
+      printWindow.document.write("<p style='font-family:sans-serif;padding:20px;'>PDF 저장용 1장 리포트를 만드는 중입니다...</p>");
+      try {
+        button.disabled = true;
+        button.textContent = "PDF 준비 중";
+        const canvas = await renderReportPageCanvas();
+        const imageUrl = canvas.toDataURL("image/png", 0.96);
+        printWindow.document.open();
+        printWindow.document.write(`
+          <!doctype html>
+          <html lang="ko">
+          <head>
+            <meta charset="utf-8">
+            <title>${reportFileName("pdf")}</title>
+            <style>
+              @page { size: A4 portrait; margin: 0; }
+              html, body { margin: 0; padding: 0; background: #fff; }
+              img { display: block; width: 100vw; height: 100vh; object-fit: contain; page-break-after: avoid; }
+            </style>
+          </head>
+          <body>
+            <img src="${imageUrl}" alt="월말리포트">
+            <script>
+              window.addEventListener("load", () => {
+                window.focus();
+                window.print();
+              });
+            <\/script>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+      } catch {
+        printWindow.close();
+        window.alert("PDF 저장 화면을 준비하지 못했습니다. 잠시 후 다시 시도해주세요.");
+      } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+    }
+
+    function parseCsv(text) {
+      const rows = [];
+      let row = [];
+      let cell = "";
+      let quoted = false;
+      const source = String(text || "").replace(/^\uFEFF/, "");
+
+      for (let index = 0; index < source.length; index += 1) {
+        const char = source[index];
+        const next = source[index + 1];
+        if (quoted) {
+          if (char === '"' && next === '"') {
+            cell += '"';
+            index += 1;
+          } else if (char === '"') {
+            quoted = false;
+          } else {
+            cell += char;
+          }
+        } else if (char === '"') {
+          quoted = true;
+        } else if (char === ",") {
+          row.push(cell.trim());
+          cell = "";
+        } else if (char === "\n") {
+          row.push(cell.trim());
+          rows.push(row);
+          row = [];
+          cell = "";
+        } else if (char !== "\r") {
+          cell += char;
+        }
+      }
+
+      row.push(cell.trim());
+      if (row.some(Boolean)) rows.push(row);
+      return rows;
+    }
+
+    function normalizedHeader(value) {
+      return String(value || "").replace(/\s/g, "").toLowerCase();
+    }
+
+    function bookValueByHeaders(row, headers, names) {
+      const targets = names.map(normalizedHeader);
+      const index = headers.findIndex((header) => targets.includes(header));
+      return index >= 0 ? row[index] || "" : "";
+    }
+
+    function downloadBookTemplate() {
+      const sampleRows = [
+        ["구분", "교재명", "단원", "전체유닛수"],
+        ["독해", "Subject Links L3", "Unit Book", "12"],
+        ["문법", "Grammar Space", "Basic", "10"],
+        ["단어", "Word Master", "Day 01-30", "30"],
+        ["듣기", "Listening Juice", "Level 4", "12"]
+      ];
+      const csv = `\uFEFF${sampleRows.map((row) => row.map(csvEscape).join(",")).join("\n")}`;
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "seula-book-template.csv";
+      document.body.appendChild(link);
+      link.click();
+      URL.revokeObjectURL(link.href);
+      link.remove();
+    }
+
+    function importBooksFromCsv(text) {
+      const rows = parseCsv(text).filter((row) => row.some(Boolean));
+      if (rows.length < 2) return { added: 0, skipped: 0 };
+
+      const headers = rows[0].map(normalizedHeader);
+      let added = 0;
+      let skipped = 0;
+      rows.slice(1).forEach((row) => {
+        const rawCategory = bookValueByHeaders(row, headers, ["구분", "분류", "category"]);
+        const name = bookValueByHeaders(row, headers, ["교재명", "교재", "name"]).trim();
+        const chapter = bookValueByHeaders(row, headers, ["단원", "chapter"]).trim() || "기본";
+        const totalUnits = Number(bookValueByHeaders(row, headers, ["전체유닛수", "전체unit수", "전체unit", "totalUnits", "units"]));
+        const category = BOOK_CATEGORIES.includes(rawCategory) ? rawCategory : inferCategoryFromText(`${rawCategory} ${name}`);
+
+        if (!name || !Number.isFinite(totalUnits) || totalUnits < 1) {
+          skipped += 1;
+          return;
+        }
+
+        data.textbooks.push({
+          id: uid("book"),
+          category,
+          name,
+          chapter,
+          totalUnits: Math.round(totalUnits)
+        });
+        added += 1;
+      });
+
+      saveData();
+      renderAll();
+      return { added, skipped };
+    }
+
+    function setupEvents() {
+      $$(".nav button").forEach((button) => {
+        button.addEventListener("click", () => {
+          $$(".nav button").forEach((item) => item.classList.remove("active"));
+          $$(".view").forEach((view) => view.classList.remove("active"));
+          button.classList.add("active");
+          $(`#${button.dataset.view}`).classList.add("active");
+          renderReport();
+        });
+      });
+
+      $("#monthInput").addEventListener("change", (event) => {
+        selectedMonth = event.target.value || currentMonth;
+        resetEditState();
+        resetCounselingEdit();
+        renderAll();
+      });
+
+      $("#studentSelect").addEventListener("change", (event) => {
+        selectedStudentId = event.target.value;
+        resetEditState();
+        resetCounselingEdit();
+        renderAll();
+      });
+
+      $("#dailyDateInput").addEventListener("change", (event) => {
+        dashboardDate = event.target.value || todayString();
+        selectedMonth = dashboardDate.slice(0, 7);
+        resetEditState();
+        resetCounselingEdit();
+        renderAll();
+      });
+
+      $("#dailySearchInput").addEventListener("input", (event) => {
+        dashboardSearch = event.target.value;
+        renderDailyStatus();
+      });
+
+      $("#dailyStatusTable").addEventListener("change", (event) => {
+        const timeInput = event.target.closest("[data-daily-time]");
+        const attendanceSelect = event.target.closest("[data-daily-attendance]");
+        if (timeInput) saveDailyStatus(timeInput.dataset.dailyTime, { arrivalTime: timeInput.value });
+        if (attendanceSelect) saveDailyStatus(attendanceSelect.dataset.dailyAttendance, { attendance: attendanceSelect.value });
+      });
+
+      $("#dailyStatusTable").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-daily-student]");
+        if (!button) return;
+        openInputForStudent(button.dataset.dailyStudent);
+      });
+
+      $("#addStudentButton").addEventListener("click", () => {
+        const name = $("#newName").value.trim();
+        if (!name) return;
+        const newStudent = {
+          id: uid("stu"),
+          name,
+          school: $("#newSchool").value.trim() || "-",
+          grade: $("#newGrade").value.trim() || "-",
+          days: $("#newDays").value.trim() || "-"
+        };
+        data.students.push(newStudent);
+        selectedStudentId = newStudent.id;
+        saveData();
+        renderAll();
+      });
+
+      $("#deleteStudentButton").addEventListener("click", () => {
+        if (!selectedStudentId) return;
+        data.students = data.students.filter((item) => item.id !== selectedStudentId);
+        ["monthlyTests", "wordTests", "progressLogs", "counselingRecords", "observations", "dailyStatuses"].forEach((key) => {
+          data[key] = data[key].filter((item) => item.studentId !== selectedStudentId);
+        });
+        selectedStudentId = data.students[0]?.id || "";
+        saveData();
+        renderAll();
+      });
+
+      $("#saveMonthlyButton").addEventListener("click", saveMonthlyTest);
+      $("#saveWordButton").addEventListener("click", saveWordTest);
+      $("#wordBook").addEventListener("change", () => renderWordUnitOptions());
+      $("#saveProgressButton").addEventListener("click", saveProgress);
+      $("#progressCategory").addEventListener("change", updateProgressInputMode);
+      $("#progressBook").addEventListener("change", () => renderProgressUnitOptions());
+      $("#progressUnitButton").addEventListener("click", () => {
+        $("#progressUnitMenu").classList.toggle("hidden");
+      });
+      $("#progressUnitMenu").addEventListener("change", updateProgressUnitButton);
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest("#progressUnitPicker")) $("#progressUnitMenu").classList.add("hidden");
+      });
+      $("#reloadBooksButton").addEventListener("click", () => {
+        renderWordBookOptions();
+        renderProgressBookOptions();
+        renderBookManagement();
+      });
+      $("#cancelMonthlyEditButton").addEventListener("click", resetEditState);
+      $("#cancelWordEditButton").addEventListener("click", resetEditState);
+      $("#cancelProgressEditButton").addEventListener("click", resetEditState);
+      $("#saveObservationButton").addEventListener("click", saveObservation);
+      $("#saveCounselingButton").addEventListener("click", saveCounseling);
+      $("#cancelCounselingEditButton").addEventListener("click", resetCounselingEdit);
+      $("#copyCounselingButton").addEventListener("click", () => copyText($("#counselingTable").innerText));
+
+      $("#addBookButton").addEventListener("click", () => {
+        const category = $("#newBookCategory").value;
+        const name = $("#newBookName").value.trim();
+        const chapter = $("#newBookChapter").value.trim() || "기본";
+        const totalUnits = Number($("#newBookUnits").value);
+        if (!name || !Number.isFinite(totalUnits) || totalUnits < 1) return;
+        data.textbooks.push({ id: uid("book"), category, name, chapter, totalUnits: Math.round(totalUnits) });
+        $("#newBookName").value = "";
+        $("#newBookChapter").value = "";
+        saveData();
+        renderAll();
+      });
+
+      $("#downloadBookTemplateButton").addEventListener("click", downloadBookTemplate);
+      $("#bookCsvInput").addEventListener("change", (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.addEventListener("load", () => {
+          const result = importBooksFromCsv(reader.result);
+          $("#bookUploadStatus").textContent = `${result.added}개 교재를 등록했습니다.${result.skipped ? ` ${result.skipped}개 행은 내용이 부족해 건너뛰었습니다.` : ""}`;
+          event.target.value = "";
+        });
+        reader.readAsText(file, "utf-8");
+      });
+
+      $("#bookTable").addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-book-delete]");
+        if (!button) return;
+        const bookId = button.dataset.bookDelete;
+        const used = data.progressLogs.some((log) => log.bookId === bookId);
+        if (used) {
+          window.alert("이미 진도표에 사용된 교재라 삭제할 수 없습니다.");
+          return;
+        }
+        data.textbooks = data.textbooks.filter((book) => book.id !== bookId);
+        saveData();
+        renderAll();
+      });
+
+      $("#recentTable").addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-action]");
+        if (!button) return;
+        const type = button.dataset.type;
+        const index = Number(button.dataset.index);
+        if (button.dataset.action === "edit") editRecentRecord(type, index);
+        if (button.dataset.action === "delete") deleteRecentRecord(type, index);
+      });
+
+      $("#counselingTable").addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-counseling-action]");
+        if (!button) return;
+        const index = Number(button.dataset.index);
+        if (button.dataset.counselingAction === "edit") editCounseling(index);
+        if (button.dataset.counselingAction === "delete") deleteCounseling(index);
+      });
+
+      $("#generateCommentButton").addEventListener("click", () => {
+        $("#commentPreview").value = buildComment();
+        $("#aiDraftStatus").textContent = "기본 문장 정리 완료";
+        renderReport();
+      });
+
+      $("#aiAnalysisButton").addEventListener("click", generateAiAnalysisDraft);
+      $("#copyCommentButton").addEventListener("click", () => copyText($("#commentPreview").value));
+      $("#copyReportButton").addEventListener("click", () => copyText($("#reportCard").innerText));
+      $("#copySummaryButton").addEventListener("click", () => copyText($("#attentionTable").innerText));
+      $("#saveReportImageButton").addEventListener("click", saveReportImage);
+      $("#saveReportPdfButton").addEventListener("click", saveReportPdf);
+      $("#exportDataButton").addEventListener("click", () => copyText(JSON.stringify(data, null, 2)));
+    }
+
+    function setDefaultDates() {
+      const today = new Date().toISOString().slice(0, 10);
+      $("#wordDate").value = today;
+      $("#progressDate").value = today;
+      $("#counselingDate").value = today;
+      $("#dailyDateInput").value = dashboardDate;
+      $("#monthInput").value = selectedMonth;
+    }
+
+    setupEvents();
+    setDefaultDates();
+    renderAll();
+  </script>
+</body>
+</html>
