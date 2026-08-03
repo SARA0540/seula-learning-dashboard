@@ -110,6 +110,49 @@
       line-height: 1.55;
     }
 
+    .account-panel {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f4f8f5;
+    }
+
+    .account-title {
+      color: var(--brand);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .role-segment {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    .role-segment button {
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      color: var(--muted);
+      font-weight: 900;
+    }
+
+    .role-segment button.active {
+      border-color: var(--brand);
+      background: var(--brand);
+      color: #fff;
+    }
+
+    .account-help {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
     .main {
       padding: 28px;
       min-width: 0;
@@ -494,6 +537,90 @@ select[multiple] {
     .status.neutral {
       color: #7f8780;
       background: #f0f2ef;
+    }
+
+    .role-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: var(--mint);
+      color: var(--brand);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .student-portal-grid {
+      display: grid;
+      grid-template-columns: 0.85fr 1.15fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .student-summary-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .student-summary-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+      font-weight: 850;
+    }
+
+    .student-summary-item span:first-child {
+      color: var(--muted);
+    }
+
+    .word-check-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .word-check-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 104px;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfa;
+    }
+
+    .word-check-main {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      min-width: 0;
+    }
+
+    .word-check-main input {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      accent-color: var(--brand);
+    }
+
+    .word-check-main strong,
+    .word-check-main span {
+      display: block;
+    }
+
+    .word-check-main span {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .word-check-count label {
+      gap: 4px;
     }
 
     .daily-panel {
@@ -1113,10 +1240,15 @@ select[multiple] {
 
       .metric-grid,
       .class-overview-grid,
+      .student-portal-grid,
       .grid-2,
       .grid-3,
       .report-layout,
       .mini-chart {
+        grid-template-columns: 1fr;
+      }
+
+      .word-check-row {
         grid-template-columns: 1fr;
       }
 
@@ -1283,14 +1415,26 @@ select[multiple] {
         <strong>SEULA ENGLISH</strong>
         <span>학습 관리</span>
       </div>
+      <section class="account-panel" aria-label="계정 모드">
+        <div class="account-title">계정 모드</div>
+        <div class="role-segment">
+          <button class="active" type="button" data-role-switch="teacher">선생님</button>
+          <button type="button" data-role-switch="student">학생</button>
+        </div>
+        <label id="studentAccountLabel">학생 계정
+          <select id="studentAccountSelect"></select>
+        </label>
+        <p class="account-help" id="accountModeText">선생님은 전체 자료를 관리할 수 있습니다.</p>
+      </section>
       <nav class="nav" aria-label="주요 화면">
-        <button class="active" data-view="dashboardView">대시보드</button>
-        <button data-view="studentsView">학생 관리</button>
-        <button data-view="inputView">자료 입력</button>
-        <button data-view="booksView">교재 관리</button>
-        <button data-view="counselingView">상담자료</button>
-        <button data-view="commentView">코멘트</button>
-        <button data-view="reportView">리포트</button>
+        <button class="active" data-view="dashboardView" data-role-access="teacher">대시보드</button>
+        <button data-view="studentPortalView" data-role-access="student">내 단어 체크</button>
+        <button data-view="studentsView" data-role-access="teacher">학생 관리</button>
+        <button data-view="inputView" data-role-access="teacher">자료 입력</button>
+        <button data-view="booksView" data-role-access="teacher">교재 관리</button>
+        <button data-view="counselingView" data-role-access="teacher">상담자료</button>
+        <button data-view="commentView" data-role-access="teacher">코멘트</button>
+        <button data-view="reportView" data-role-access="teacher">리포트</button>
       </nav>
       <p class="sidebar-note">학생 정보, 월말테스트, 단어테스트, 진도표, 관찰 기록을 한곳에 쌓아 월말리포트 초안을 자동으로 만듭니다.</p>
     </aside>
@@ -1392,6 +1536,60 @@ select[multiple] {
             <div class="bar-list" id="sectionBars"></div>
           </section>
         </div>
+      </section>
+
+      <section class="view" id="studentPortalView">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Student Account</p>
+            <h2>내 학습 현황</h2>
+          </div>
+          <span class="role-pill" id="studentPortalName">학생 계정</span>
+        </div>
+
+        <div class="student-portal-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">This Month</p>
+                <h2>이번달 요약</h2>
+              </div>
+            </div>
+            <div class="student-summary-list" id="studentPortalSummary"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Word Memory</p>
+                <h2>단어 암기 체크</h2>
+              </div>
+            </div>
+            <div class="word-check-list" id="studentWordChecklist"></div>
+          </section>
+        </div>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Monthly Log</p>
+              <h2>내 이번달 입력 내역</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>구분</th>
+                  <th>날짜/영역</th>
+                  <th>내용</th>
+                  <th>점수/상태</th>
+                </tr>
+              </thead>
+              <tbody id="studentTimelineTable"></tbody>
+            </table>
+          </div>
+        </section>
       </section>
 
       <section class="view" id="studentsView">
@@ -1764,6 +1962,7 @@ select[multiple] {
 
   <script>
     const STORAGE_KEY = "seula-monthly-report-dashboard-v1";
+    const ACCOUNT_STORAGE_KEY = "seula-learning-dashboard-account-v1";
     const currentMonth = new Date().toISOString().slice(0, 7);
     const MONTHLY_REPORT_SECTIONS = ["독해", "문법"];
     const BOOK_CATEGORIES = ["독해", "문법", "단어", "듣기"];
@@ -1830,6 +2029,7 @@ select[multiple] {
           plan: "다음달에는 오답 문장을 직접 고쳐 쓰는 연습과 누적 단어 복습을 함께 진행하면 좋겠습니다."
         }
       ],
+      wordMemoryChecks: [],
       dailyStatuses: [
         { studentId: "stu-1", date: `${currentMonth}-04`, arrivalTime: "14:52", attendance: "출석" },
         { studentId: "stu-2", date: `${currentMonth}-04`, arrivalTime: "15:08", attendance: "지각" },
@@ -1838,6 +2038,7 @@ select[multiple] {
     };
 
     let data = loadData();
+    let accountState = loadAccountState();
     let selectedMonth = currentMonth;
     let selectedStudentId = data.students[0]?.id || "";
     let dashboardDate = todayString();
@@ -1867,6 +2068,7 @@ select[multiple] {
         progressLogs: Array.isArray(source.progressLogs) ? source.progressLogs : [],
         counselingRecords: Array.isArray(source.counselingRecords) ? source.counselingRecords : [],
         observations: Array.isArray(source.observations) ? source.observations : [],
+        wordMemoryChecks: Array.isArray(source.wordMemoryChecks) ? source.wordMemoryChecks : [],
         dailyStatuses: Array.isArray(source.dailyStatuses) ? source.dailyStatuses : []
       };
 
@@ -1919,11 +2121,41 @@ select[multiple] {
           attendance: ["미확인", "출석", "지각", "결석"].includes(item.attendance) ? item.attendance : "미확인"
         }));
 
+      normalized.wordMemoryChecks = normalized.wordMemoryChecks
+        .filter((item) => item.studentId && item.key)
+        .map((item) => ({
+          studentId: item.studentId,
+          key: item.key,
+          checked: Boolean(item.checked),
+          memorized: Number.isFinite(Number(item.memorized)) ? Number(item.memorized) : 0,
+          updatedAt: item.updatedAt || ""
+        }));
+
       return normalized;
     }
 
     function saveData() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadAccountState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(ACCOUNT_STORAGE_KEY) || "null");
+        if (saved && ["teacher", "student"].includes(saved.role)) {
+          return { role: saved.role, studentId: saved.studentId || "" };
+        }
+      } catch (error) {
+        console.warn(error);
+      }
+      return { role: "teacher", studentId: "" };
+    }
+
+    function saveAccountState() {
+      localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(accountState));
+    }
+
+    function isTeacherAccount() {
+      return accountState.role === "teacher";
     }
 
     function uid(prefix) {
@@ -1932,6 +2164,63 @@ select[multiple] {
 
     function student() {
       return data.students.find((item) => item.id === selectedStudentId) || data.students[0];
+    }
+
+    function defaultViewForRole() {
+      return isTeacherAccount() ? "dashboardView" : "studentPortalView";
+    }
+
+    function viewAllowed(viewId) {
+      const button = $(`.nav button[data-view="${viewId}"]`);
+      if (!button) return true;
+      const access = button.dataset.roleAccess || "teacher";
+      if (access === "student") return !isTeacherAccount();
+      if (access === "teacher") return isTeacherAccount();
+      return true;
+    }
+
+    function activateView(viewId) {
+      const targetView = viewAllowed(viewId) ? viewId : defaultViewForRole();
+      $$(".nav button").forEach((item) => item.classList.toggle("active", item.dataset.view === targetView));
+      $$(".view").forEach((view) => view.classList.toggle("active", view.id === targetView));
+      renderReport();
+    }
+
+    function ensureAccountStudent() {
+      if (!data.students.length) {
+        accountState.studentId = "";
+        selectedStudentId = "";
+        return;
+      }
+      if (!data.students.some((item) => item.id === accountState.studentId)) {
+        accountState.studentId = selectedStudentId || data.students[0].id;
+      }
+      if (!isTeacherAccount()) selectedStudentId = accountState.studentId;
+      saveAccountState();
+    }
+
+    function syncAccountUi() {
+      ensureAccountStudent();
+      document.body.dataset.accountRole = accountState.role;
+      $$("[data-role-switch]").forEach((button) => {
+        button.classList.toggle("active", button.dataset.roleSwitch === accountState.role);
+      });
+      $$(".nav button").forEach((button) => {
+        const access = button.dataset.roleAccess || "teacher";
+        button.classList.toggle("hidden", (access === "teacher" && !isTeacherAccount()) || (access === "student" && isTeacherAccount()));
+      });
+
+      $("#studentAccountSelect").innerHTML = data.students.map((item) => `<option value="${item.id}">${item.name} (${item.grade || "-"})</option>`).join("");
+      $("#studentAccountSelect").value = accountState.studentId || selectedStudentId;
+      $("#studentAccountLabel").classList.toggle("hidden", isTeacherAccount());
+      $("#studentSelect").value = selectedStudentId;
+      $("#studentSelect").disabled = !isTeacherAccount();
+      $("#accountModeText").textContent = isTeacherAccount()
+        ? "선생님은 전체 자료 입력, 상담기록, 리포트 생성을 관리합니다."
+        : "학생은 자기 단어 암기 체크와 이번달 학습 현황만 확인합니다.";
+
+      const activeView = $(".view.active")?.id;
+      if (!activeView || !viewAllowed(activeView)) activateView(defaultViewForRole());
     }
 
     function monthLabel(month) {
@@ -2232,6 +2521,7 @@ select[multiple] {
       $("#monthInput").value = selectedMonth;
       $("#studentSelect").innerHTML = data.students.map((item) => `<option value="${item.id}">${item.name}</option>`).join("");
       $("#studentSelect").value = selectedStudentId;
+      $("#studentSelect").disabled = !isTeacherAccount();
     }
 
     function renderDailyStatus() {
@@ -2492,6 +2782,97 @@ select[multiple] {
           </tr>
         `).join("")
         : `<tr><td colspan="7">이번달 상담자료가 아직 없습니다.</td></tr>`;
+    }
+
+    function wordMemoryKey(record) {
+      return [record.studentId, record.date, record.bookId || "", record.unitText || record.range || ""]
+        .map((value) => encodeURIComponent(String(value || "")))
+        .join("|");
+    }
+
+    function memoryCheckFor(key) {
+      return data.wordMemoryChecks.find((item) => item.key === key);
+    }
+
+    function wordMemorySummary(studentId) {
+      const checks = data.wordMemoryChecks.filter((item) => item.studentId === studentId && item.checked);
+      return {
+        checkedCount: checks.length,
+        memorizedTotal: checks.reduce((sum, item) => sum + (Number(item.memorized) || 0), 0)
+      };
+    }
+
+    function saveWordMemoryCheck(key, updates) {
+      const baseTest = wordsFor(selectedStudentId).find((item) => wordMemoryKey(item) === key);
+      if (!baseTest) return;
+      let record = data.wordMemoryChecks.find((item) => item.key === key);
+      if (!record) {
+        record = {
+          studentId: selectedStudentId,
+          key,
+          checked: false,
+          memorized: Number(baseTest.memorized) || Number(baseTest.max) || 0,
+          updatedAt: ""
+        };
+        data.wordMemoryChecks.push(record);
+      }
+      Object.assign(record, updates, { updatedAt: new Date().toISOString() });
+      saveData();
+    }
+
+    function renderStudentPortal() {
+      const active = student();
+      if (!active) {
+        $("#studentPortalName").textContent = "학생 계정";
+        $("#studentPortalSummary").innerHTML = `<div class="empty">학생을 먼저 추가해주세요.</div>`;
+        $("#studentWordChecklist").innerHTML = `<div class="empty">단어테스트 내역이 없습니다.</div>`;
+        $("#studentTimelineTable").innerHTML = `<tr><td colspan="4">이번달 입력 내역이 아직 없습니다.</td></tr>`;
+        return;
+      }
+
+      const summary = summaryFor(active.id);
+      const memory = wordMemorySummary(active.id);
+      const wordTests = wordsFor(active.id).sort((a, b) => a.date.localeCompare(b.date));
+      $("#studentPortalName").textContent = `${active.name} 학생`;
+      $("#studentPortalSummary").innerHTML = `
+        <div class="student-summary-item"><span>월말 평균</span><strong>${formatScore(summary.monthlyAvg)}</strong></div>
+        <div class="student-summary-item"><span>단어 평균</span><strong>${formatScore(summary.wordAvg)}</strong></div>
+        <div class="student-summary-item"><span>암기 체크</span><strong>${memory.checkedCount}/${wordTests.length}회</strong></div>
+        <div class="student-summary-item"><span>누적 암기 단어</span><strong>${memory.memorizedTotal}개</strong></div>
+      `;
+
+      $("#studentWordChecklist").innerHTML = wordTests.length
+        ? wordTests.map((test) => {
+          const key = wordMemoryKey(test);
+          const check = memoryCheckFor(key);
+          const checked = Boolean(check?.checked);
+          const memorized = Number.isFinite(Number(check?.memorized)) ? Number(check.memorized) : Number(test.memorized) || Number(test.max) || 0;
+          return `
+            <article class="word-check-row">
+              <div class="word-check-main">
+                <input type="checkbox" ${checked ? "checked" : ""} data-memory-check="${key}" aria-label="${wordTestLabel(test)} 암기 완료">
+                <div>
+                  <strong>${dateLabel(test.date)} · ${wordTestLabel(test)}</strong>
+                  <span>테스트 ${test.score}/${test.max} · 선생님 입력 암기량 ${Number(test.memorized) || 0}개</span>
+                </div>
+              </div>
+              <div class="word-check-count">
+                <label>암기 개수<input type="number" min="0" value="${memorized}" data-memory-count="${key}"></label>
+              </div>
+            </article>
+          `;
+        }).join("")
+        : `<div class="empty">이번달 단어테스트가 아직 없습니다.</div>`;
+
+      const rows = [
+        ...monthlyFor(active.id).map((item) => ["월말", item.section, item.range, `${item.score}점`]),
+        ...wordTests.map((item) => ["단어", dateLabel(item.date), wordTestLabel(item), `${item.score}/${item.max}`]),
+        ...progressFor(active.id).sort((a, b) => a.date.localeCompare(b.date)).map((item) => ["진도", dateLabel(item.date), lessonLabel(item), `${item.homework} · ${item.memo}`])
+      ];
+
+      $("#studentTimelineTable").innerHTML = rows.length
+        ? rows.map((cells) => `<tr>${cells.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")
+        : `<tr><td colspan="4">이번달 입력 내역이 아직 없습니다.</td></tr>`;
     }
 
     function collectionForEditType(type) {
@@ -3026,6 +3407,7 @@ select[multiple] {
         selectedStudentId = data.students[0]?.id || "";
       }
       renderSelectors();
+      syncAccountUi();
       renderDailyStatus();
       renderWordBookOptions();
       updateProgressInputMode();
@@ -3034,6 +3416,7 @@ select[multiple] {
       renderSectionBars();
       renderClassOverview();
       renderStudents();
+      renderStudentPortal();
       renderBookManagement();
       renderRecent();
       renderCounseling();
@@ -3503,12 +3886,30 @@ select[multiple] {
     function setupEvents() {
       $$(".nav button").forEach((button) => {
         button.addEventListener("click", () => {
-          $$(".nav button").forEach((item) => item.classList.remove("active"));
-          $$(".view").forEach((view) => view.classList.remove("active"));
-          button.classList.add("active");
-          $(`#${button.dataset.view}`).classList.add("active");
-          renderReport();
+          activateView(button.dataset.view);
         });
+      });
+
+      $$("[data-role-switch]").forEach((button) => {
+        button.addEventListener("click", () => {
+          accountState.role = button.dataset.roleSwitch;
+          if (!accountState.studentId) accountState.studentId = selectedStudentId || data.students[0]?.id || "";
+          if (!isTeacherAccount()) selectedStudentId = accountState.studentId;
+          saveAccountState();
+          resetEditState();
+          resetCounselingEdit();
+          renderAll();
+          activateView(defaultViewForRole());
+        });
+      });
+
+      $("#studentAccountSelect").addEventListener("change", (event) => {
+        accountState.studentId = event.target.value;
+        selectedStudentId = event.target.value;
+        saveAccountState();
+        resetEditState();
+        resetCounselingEdit();
+        renderAll();
       });
 
       $("#monthInput").addEventListener("change", (event) => {
@@ -3520,6 +3921,10 @@ select[multiple] {
 
       $("#studentSelect").addEventListener("change", (event) => {
         selectedStudentId = event.target.value;
+        if (isTeacherAccount()) {
+          accountState.studentId = selectedStudentId;
+          saveAccountState();
+        }
         resetEditState();
         resetCounselingEdit();
         renderAll();
@@ -3549,6 +3954,29 @@ select[multiple] {
         const button = event.target.closest("[data-daily-student]");
         if (!button) return;
         openInputForStudent(button.dataset.dailyStudent);
+      });
+
+      $("#studentWordChecklist").addEventListener("change", (event) => {
+        const checkbox = event.target.closest("[data-memory-check]");
+        if (!checkbox) return;
+        const key = checkbox.dataset.memoryCheck;
+        const countInput = $(`[data-memory-count="${CSS.escape(key)}"]`);
+        saveWordMemoryCheck(key, {
+          checked: checkbox.checked,
+          memorized: Number(countInput?.value) || 0
+        });
+        renderStudentPortal();
+      });
+
+      $("#studentWordChecklist").addEventListener("input", (event) => {
+        const input = event.target.closest("[data-memory-count]");
+        if (!input) return;
+        const key = input.dataset.memoryCount;
+        const checkbox = $(`[data-memory-check="${CSS.escape(key)}"]`);
+        saveWordMemoryCheck(key, {
+          checked: Boolean(checkbox?.checked),
+          memorized: Number(input.value) || 0
+        });
       });
 
       $("#addStudentButton").addEventListener("click", () => {
