@@ -2745,6 +2745,21 @@ select[multiple] {
     const BOOK_CATEGORIES = ["독해", "문법", "단어", "듣기"];
     const BOOK_LINKED_PROGRESS_CATEGORIES = ["독해", "문법", "듣기"];
     const BOOK_OUTLINE_PREFIX = "__SEULA_BOOK_OUTLINE_V1__";
+    const DEFAULT_TEXTBOOK_CATALOG = [
+      ["독해", "Read it", "200-1", 16], ["독해", "Read it", "200-2", 16], ["독해", "Read it", "200-3", 16],
+      ["독해", "Subject Link 2nd", "L3", 16], ["독해", "딥독", "1", 30], ["독해", "딥독", "2", 30], ["독해", "딥독", "3", 30],
+      ["독해", "첫번째 수능영어", "기초편", 14], ["독해", "첫번째 수능영어", "유형편", 14], ["독해", "첫번째 수능영어", "실전편", 11],
+      ["독해", "리딩그라피", "1", 32], ["독해", "리딩그라피", "2", 32], ["독해", "리딩그라피", "3", 32], ["독해", "리딩그라피", "4", 32], ["독해", "리딩그라피", "5", 32], ["독해", "리딩그라피", "6", 32],
+      ["독해", "천일문 독해", "Intro Argument", 30], ["독해", "천일문 독해", "Intro Explanation", 30], ["독해", "천일문 독해", "Basic Argument", 30], ["독해", "천일문 독해", "Basic Explanation", 30], ["독해", "천일문 독해", "Essential Argument", 30], ["독해", "천일문 독해", "Essential Explanation", 30], ["독해", "천일문 독해", "Master Argument", 30], ["독해", "천일문 독해", "Master Explanation", 30],
+      ["독해", "Nonfiction Bricks", "80-1", 16], ["독해", "Nonfiction Bricks", "80-2", 16], ["독해", "Nonfiction Bricks", "80-3", 16], ["독해", "Nonfiction Bricks", "120-1", 16], ["독해", "Nonfiction Bricks", "120-2", 16], ["독해", "Nonfiction Bricks", "120-3", 16], ["독해", "Nonfiction Bricks", "170-1", 16], ["독해", "Nonfiction Bricks", "170-2", 16], ["독해", "Nonfiction Bricks", "170-3", 16],
+      ["독해", "100 word", "1", 12], ["독해", "100 word", "2", 12], ["독해", "120 word", "1", 12], ["독해", "120 word", "2", 12],
+      ["문법", "왓츠그래머", "Start 1", 7], ["문법", "왓츠그래머", "Start 2", 7], ["문법", "왓츠그래머", "Start 3", 7], ["문법", "왓츠그래머", "Plus 1", 7], ["문법", "왓츠그래머", "Plus 2", 7], ["문법", "왓츠그래머", "Plus 3", 7],
+      ["문법", "천일문 중등 GRAMMAR", "Level 1", 32], ["문법", "천일문 중등 GRAMMAR", "Level 2", 31], ["문법", "천일문 중등 GRAMMAR", "Level 3", 35], ["문법", "천일문 고등 GRAMMAR", "고등", 101],
+      ["문법", "그래머버디", "Level 1", 10], ["문법", "그래머버디", "Level 2", 10], ["문법", "그래머버디", "Level 3", 10], ["문법", "그래머텐", "기본 1", 12], ["문법", "그래머텐", "기본 2", 12], ["문법", "그래머텐", "기본 3", 12], ["문법", "그래머텐", "기본 4", 12],
+      ["문법", "그래머빈", "1", 10], ["문법", "그래머빈", "2", 10], ["문법", "그래머빈", "3", 10], ["문법", "그래머빈", "4", 10], ["문법", "그래머인사이드", "Starter", 36], ["문법", "그래머인사이드", "1", 35], ["문법", "그래머인사이드", "2", 31], ["문법", "그래머인사이드", "3", 33], ["문법", "링크그래머", "Starter", 33], ["문법", "링크그래머", "1", 36], ["문법", "링크그래머", "2", 32], ["문법", "링크그래머", "3", 34],
+      ["단어", "능률초등기본", "Day 01-40", 40], ["단어", "능률초등필수", "Day 01-40", 40], ["단어", "능률중등기본", "Day 01-50", 50], ["단어", "능률중등필수", "Day 01-50", 50], ["단어", "능률중등고난도", "Day 01-40", 40], ["단어", "능률고등기본", "Day 01-40", 40],
+      ["단어", "어휘끝중학필수", "Day 01-40", 40], ["단어", "어휘끝중학고난도", "Day 01-40", 40], ["단어", "어휘끝고교기본", "Day 01-42", 42], ["단어", "어휘끝수능", "Day 01-45", 45], ["단어", "보카클리어중학기본", "Day 01-40", 40], ["단어", "보카클리어중학실력", "Day 01-40", 40], ["단어", "보카클리어중학완성", "Day 01-40", 40], ["단어", "AList VOCA 초등 기본", "Day 01-32", 32], ["단어", "AList VOCA 초등 필수", "Day 01-32", 32]
+    ].map(([category, name, chapter, totalUnits], index) => ({ id: `catalog-book-${index + 1}`, category, name, chapter, totalUnits }));
 
     const seedData = {
       students: [
@@ -2775,7 +2790,8 @@ select[multiple] {
         { id: "book-1", category: "독해", name: "Subject Links L3", chapter: "Unit Book", totalUnits: 12 },
         { id: "book-2", category: "문법", name: "Grammar Space", chapter: "Basic", totalUnits: 10 },
         { id: "book-3", category: "듣기", name: "Listening Juice", chapter: "Level 4", totalUnits: 12 },
-        { id: "book-4", category: "단어", name: "Word Master", chapter: "Day 01-30", totalUnits: 30 }
+        { id: "book-4", category: "단어", name: "Word Master", chapter: "Day 01-30", totalUnits: 30 },
+        ...DEFAULT_TEXTBOOK_CATALOG
       ],
       progressLogs: [
         { studentId: "stu-1", date: `${currentMonth}-03`, bookId: "book-1", unit: 1, lesson: "Subject Links L3 Unit 01", homework: "완료", memo: "중심 문장 찾기 양호" },
@@ -2856,7 +2872,17 @@ select[multiple] {
         students: Array.isArray(source.students) ? source.students : [],
         monthlyTests: Array.isArray(source.monthlyTests) ? source.monthlyTests : [],
         wordTests: Array.isArray(source.wordTests) ? source.wordTests : [],
-        textbooks: Array.isArray(source.textbooks) && source.textbooks.length ? source.textbooks : structuredClone(seedData.textbooks),
+        textbooks: (() => {
+          const savedBooks = Array.isArray(source.textbooks) ? source.textbooks : [];
+          const combined = [...structuredClone(seedData.textbooks), ...savedBooks];
+          const uniqueBooks = new Map();
+          combined.forEach((book) => {
+            const stored = decodeBookChapter(book.chapter);
+            const key = `${book.category || ""}|${book.name || ""}|${stored.chapter || "기본"}`;
+            uniqueBooks.set(key, book);
+          });
+          return [...uniqueBooks.values()];
+        })(),
         progressLogs: Array.isArray(source.progressLogs) ? source.progressLogs : [],
         counselingRecords: Array.isArray(source.counselingRecords) ? source.counselingRecords : [],
         observations: Array.isArray(source.observations) ? source.observations : [],
