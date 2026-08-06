@@ -713,6 +713,34 @@ select[multiple] {
       gap: 9px;
     }
 
+    .student-self-study-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .student-self-study-actions button.active {
+      color: #fff;
+      background: var(--brand);
+      border-color: var(--brand);
+    }
+
+    .student-self-study-picker {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: end;
+      padding: 12px 0;
+      border-top: 1px dashed var(--line);
+      border-bottom: 1px dashed var(--line);
+      margin-bottom: 10px;
+    }
+
+    .student-self-study-picker.hidden {
+      display: none;
+    }
+
     .student-progress-check-row {
       display: flex;
       align-items: flex-start;
@@ -1674,6 +1702,10 @@ select[multiple] {
         border-bottom: 1px solid var(--line);
       }
 
+      .student-self-study-picker {
+        grid-template-columns: 1fr;
+      }
+
       .topbar,
       .section-head,
       .panel-head,
@@ -2257,6 +2289,19 @@ select[multiple] {
             <div>
               <p class="eyebrow">Reading & Grammar</p>
               <h3 style="margin:0 0 10px;">오늘 배운 진도 체크</h3>
+              <div class="student-self-study-actions" id="studentSelfStudyActions">
+                <button class="ghost" type="button" data-self-study-category="독해">독해 선택</button>
+                <button class="ghost" type="button" data-self-study-category="문법">문법 선택</button>
+              </div>
+              <div class="student-self-study-picker hidden" id="studentSelfStudyPicker">
+                <label>교재
+                  <select id="studentSelfStudyBook"></select>
+                </label>
+                <label>공부한 Unit
+                  <select id="studentSelfStudyUnits" multiple></select>
+                </label>
+                <button class="primary" id="saveStudentSelfStudy" type="button">진도 체크</button>
+              </div>
               <div class="student-progress-check-list" id="studentProgressChecklist"></div>
             </div>
           </div>
@@ -2779,6 +2824,7 @@ select[multiple] {
     let selectedStudentId = data.students[0]?.id || "";
     let dashboardDate = todayString();
     let dashboardSearch = "";
+    let studentSelfStudy = { category: "", bookId: "" };
     let editingState = { type: "", index: -1 };
     let studentEditId = "";
     let counselingEditIndex = -1;
@@ -3904,6 +3950,12 @@ select[multiple] {
         .join("|");
     }
 
+    function selfStudyCheckKey(studentId, date, category, bookId, units) {
+      return ["self-study", studentId, date, category, bookId, normalizeUnits(units).join("-")]
+        .map((value) => encodeURIComponent(String(value || "")))
+        .join("|");
+    }
+
     function memoryCheckFor(key) {
       return data.wordMemoryChecks.find((item) => item.key === key);
     }
@@ -3916,13 +3968,29 @@ select[multiple] {
       return record?.key?.startsWith("progress-check|");
     }
 
+    function selfStudyCheckInfo(record) {
+      const parts = String(record?.key || "").split("|").map((value) => decodeURIComponent(value));
+      if (parts[0] !== "self-study" || parts.length < 6) return null;
+      return {
+        studentId: parts[1],
+        date: parts[2],
+        category: parts[3],
+        bookId: parts[4],
+        units: normalizeUnits(parts[5].split("-"))
+      };
+    }
+
+    function isSelfStudyCheck(record) {
+      return record?.key?.startsWith("self-study|");
+    }
+
     function isStudentProgressChecked(progress) {
       return Boolean(memoryCheckFor(progressCheckKey(progress))?.checked);
     }
 
     function wordMemorySummary(studentId) {
       const dailyChecks = data.wordMemoryChecks.filter((item) => item.studentId === studentId && item.checked && isDailyWordMemory(item));
-      const legacyChecks = data.wordMemoryChecks.filter((item) => item.studentId === studentId && item.checked && !isDailyWordMemory(item) && !isProgressCheck(item));
+      const legacyChecks = data.wordMemoryChecks.filter((item) => item.studentId === studentId && item.checked && !isDailyWordMemory(item) && !isProgressCheck(item) && !isSelfStudyCheck(item));
       const checks = dailyChecks.length ? dailyChecks : legacyChecks;
       return {
         checkedCount: checks.length,
@@ -3957,6 +4025,32 @@ select[multiple] {
       });
     }
 
+    function renderStudentSelfStudyPicker(active) {
+      const picker = $("#studentSelfStudyPicker");
+      const category = studentSelfStudy.category;
+      $$("[data-self-study-category]").forEach((button) => {
+        button.classList.toggle("active", button.dataset.selfStudyCategory === category);
+      });
+      if (!active || !category) {
+        picker.classList.add("hidden");
+        return;
+      }
+
+      const books = sortedTextbooks().filter((book) => book.category === category);
+      const bookId = books.some((book) => book.id === studentSelfStudy.bookId) ? studentSelfStudy.bookId : books[0]?.id || "";
+      studentSelfStudy.bookId = bookId;
+      $("#studentSelfStudyBook").innerHTML = books.length
+        ? books.map((book) => `<option value="${book.id}">${escapeHtml(textbookLabel(book))}</option>`).join("")
+        : `<option value="">등록된 ${category} 교재가 없습니다.</option>`;
+      $("#studentSelfStudyBook").value = bookId;
+
+      const book = textbookById(bookId);
+      $("#studentSelfStudyUnits").innerHTML = book
+        ? Array.from({ length: book.totalUnits }, (_, index) => index + 1).map((unit) => `<option value="${unit}" ${unit === 1 ? "selected" : ""}>${escapeHtml(bookUnitLabel(book, unit))}</option>`).join("")
+        : "";
+      picker.classList.remove("hidden");
+    }
+
     function renderStudentPortal() {
       const active = student();
       if (!active) {
@@ -3966,6 +4060,7 @@ select[multiple] {
         $("#studentDailyWordCount").value = "";
         $("#studentDailyWordStatus").textContent = "학생 접속 후 오늘 외운 단어 수를 입력할 수 있어요.";
         $("#studentProgressChecklist").innerHTML = `<div class="empty">학생 접속 후 오늘 진도를 확인할 수 있어요.</div>`;
+        renderStudentSelfStudyPicker(null);
         $("#studentTimelineTable").innerHTML = `<tr><td colspan="4">이번달 입력 내역이 아직 없습니다.</td></tr>`;
         return;
       }
@@ -4013,8 +4108,7 @@ select[multiple] {
 
       const todayProgress = progressFor(active.id)
         .filter((item) => item.date === studyDate && ["독해", "문법"].includes(item.category));
-      $("#studentProgressChecklist").innerHTML = todayProgress.length
-        ? todayProgress.map((item) => {
+      const teacherProgressRows = todayProgress.map((item) => {
           const key = progressCheckKey(item);
           const checked = Boolean(memoryCheckFor(key)?.checked);
           return `
@@ -4026,8 +4120,28 @@ select[multiple] {
               </span>
             </label>
           `;
-        }).join("")
-        : `<div class="empty">오늘 선생님이 등록한 독해·문법 진도가 없습니다.</div>`;
+        });
+      const selfStudyRows = data.wordMemoryChecks
+        .filter((item) => item.studentId === active.id && item.checked && isSelfStudyCheck(item))
+        .map((item) => ({ item, info: selfStudyCheckInfo(item) }))
+        .filter(({ info }) => info?.date === studyDate)
+        .map(({ item, info }) => {
+          const book = textbookById(info.bookId);
+          const label = book ? `${textbookLabel(book)} ${bookUnitsLabel(book, info.units)}` : unitListLabel(info.units);
+          return `
+            <label class="student-progress-check-row">
+              <input type="checkbox" checked data-self-study-check="${item.key}" aria-label="${label} 학습 완료">
+              <span>
+                <strong>${info.category} · ${escapeHtml(label)}</strong>
+                <span>내가 선택한 진도입니다.</span>
+              </span>
+            </label>
+          `;
+        });
+      $("#studentProgressChecklist").innerHTML = [...teacherProgressRows, ...selfStudyRows].length
+        ? [...teacherProgressRows, ...selfStudyRows].join("")
+        : `<div class="empty">오늘 선생님이 등록한 독해·문법 진도가 없습니다. 위에서 과목을 선택해 직접 기록할 수 있어요.</div>`;
+      renderStudentSelfStudyPicker(active);
 
       const rows = [
         ...monthlyFor(active.id).map((item) => ["월말", item.section, item.range, `${item.score}점`]),
@@ -5837,8 +5951,34 @@ select[multiple] {
 
       $("#studentProgressChecklist").addEventListener("change", (event) => {
         const checkbox = event.target.closest("[data-progress-check]");
-        if (!checkbox) return;
-        saveStudentStudyCheck(checkbox.dataset.progressCheck, { checked: checkbox.checked, memorized: 0 });
+        const selfStudyCheckbox = event.target.closest("[data-self-study-check]");
+        if (checkbox) saveStudentStudyCheck(checkbox.dataset.progressCheck, { checked: checkbox.checked, memorized: 0 });
+        if (selfStudyCheckbox) saveStudentStudyCheck(selfStudyCheckbox.dataset.selfStudyCheck, { checked: selfStudyCheckbox.checked, memorized: 0 });
+        if (!checkbox && !selfStudyCheckbox) return;
+        renderStudentPortal();
+      });
+
+      $("#studentSelfStudyActions").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-self-study-category]");
+        if (!button) return;
+        studentSelfStudy = { category: button.dataset.selfStudyCategory, bookId: "" };
+        renderStudentSelfStudyPicker(student());
+      });
+
+      $("#studentSelfStudyBook").addEventListener("change", (event) => {
+        studentSelfStudy.bookId = event.target.value;
+        renderStudentSelfStudyPicker(student());
+      });
+
+      $("#saveStudentSelfStudy").addEventListener("click", () => {
+        const active = student();
+        const units = Array.from($("#studentSelfStudyUnits").selectedOptions).map((option) => option.value);
+        if (!active || !studentSelfStudy.category || !studentSelfStudy.bookId || !units.length) return;
+        saveStudentStudyCheck(
+          selfStudyCheckKey(active.id, todayString(), studentSelfStudy.category, studentSelfStudy.bookId, units),
+          { checked: true, memorized: 0 }
+        );
+        studentSelfStudy = { category: "", bookId: "" };
         renderStudentPortal();
       });
 
