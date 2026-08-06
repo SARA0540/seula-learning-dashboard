@@ -4358,6 +4358,30 @@ select[multiple] {
       });
     }
 
+    function mergeTeacherRemoteData(localData, remoteData) {
+      const mergeBy = (localItems, remoteItems, keyFor) => {
+        const merged = new Map();
+        (localItems || []).forEach((item) => merged.set(keyFor(item), item));
+        (remoteItems || []).forEach((item) => merged.set(keyFor(item), item));
+        return [...merged.values()];
+      };
+      const textbookKey = (book) => {
+        const stored = decodeBookChapter(book.chapter);
+        return `${book.category}|${book.name}|${stored.chapter || "기본"}`;
+      };
+      return normalizeData({
+        students: mergeBy(localData.students, remoteData.students, (item) => item.id),
+        textbooks: mergeBy(localData.textbooks, remoteData.textbooks, textbookKey),
+        monthlyTests: mergeBy(localData.monthlyTests, remoteData.monthlyTests, (item) => item.id),
+        wordTests: mergeBy(localData.wordTests, remoteData.wordTests, (item) => item.id),
+        progressLogs: mergeBy(localData.progressLogs, remoteData.progressLogs, (item) => item.id),
+        counselingRecords: mergeBy(localData.counselingRecords, remoteData.counselingRecords, (item) => item.id),
+        observations: mergeBy(localData.observations, remoteData.observations, (item) => item.id),
+        wordMemoryChecks: mergeBy(localData.wordMemoryChecks, remoteData.wordMemoryChecks, (item) => item.key),
+        dailyStatuses: mergeBy(localData.dailyStatuses, remoteData.dailyStatuses, (item) => item.id || `${item.studentId}-${item.date}`)
+      });
+    }
+
     async function fetchCurrentProfile() {
       const client = getSupabaseClient();
       if (!client) return null;
@@ -4434,7 +4458,7 @@ select[multiple] {
 
       const incoming = supabaseRowsToAppData(rows);
       if (incoming.students.length || profile.role === "student") {
-        data = incoming;
+        data = profile.role === "teacher" ? mergeTeacherRemoteData(data, incoming) : incoming;
         if (profile.student_id) selectedStudentId = profile.student_id;
         if (!selectedStudentId && data.students[0]) selectedStudentId = data.students[0].id;
         saveLocalDataOnly();
