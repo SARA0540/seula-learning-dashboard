@@ -687,6 +687,63 @@ select[multiple] {
       gap: 4px;
     }
 
+    .student-study-grid {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.3fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .student-daily-word {
+      display: grid;
+      gap: 10px;
+      padding-right: 20px;
+      border-right: 1px solid var(--line);
+    }
+
+    .student-daily-word p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .student-progress-check-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .student-progress-check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .student-progress-check-row:last-child {
+      border-bottom: 0;
+    }
+
+    .student-progress-check-row input {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      accent-color: var(--brand);
+    }
+
+    .student-progress-check-row strong,
+    .student-progress-check-row span {
+      display: block;
+    }
+
+    .student-progress-check-row span {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
     .daily-panel {
       margin-bottom: 16px;
       padding: 0;
@@ -1607,6 +1664,16 @@ select[multiple] {
         grid-template-columns: 1fr;
       }
 
+      .student-study-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .student-daily-word {
+        padding: 0 0 16px;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
       .topbar,
       .section-head,
       .panel-head,
@@ -2026,7 +2093,7 @@ select[multiple] {
       </section>
       <nav class="nav" aria-label="주요 화면">
         <button class="active" data-view="dashboardView" data-role-access="teacher">대시보드</button>
-        <button data-view="studentPortalView" data-role-access="student">내 단어 체크</button>
+        <button data-view="studentPortalView" data-role-access="student">내 학습 체크</button>
         <button data-view="studentsView" data-role-access="teacher">학생 관리</button>
         <button data-view="inputView" data-role-access="teacher">자료 입력</button>
         <button data-view="booksView" data-role-access="teacher">교재 관리</button>
@@ -2138,13 +2205,13 @@ select[multiple] {
 
       <section class="view" id="studentPortalView">
         <section class="panel student-login-welcome" id="studentLoginWelcome">
-          <strong>내 단어 학습에 접속해요</strong>
+          <strong>내 학습 기록에 접속해요</strong>
           <p>선생님께 받은 4자리 번호를 위 입력란에 적고<br>‘학생 접속’ 버튼을 눌러주세요.</p>
         </section>
         <div class="section-head">
           <div>
             <p class="eyebrow">Student Account</p>
-            <h2>나의 단어 학습</h2>
+            <h2>나의 학습 체크</h2>
           </div>
           <span class="role-pill" id="studentPortalName">학생 계정</span>
         </div>
@@ -2171,6 +2238,29 @@ select[multiple] {
             <div class="word-check-list" id="studentWordChecklist"></div>
           </section>
         </div>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Today Study</p>
+              <h2>오늘 학습 기록</h2>
+            </div>
+          </div>
+          <div class="student-study-grid">
+            <div class="student-daily-word">
+              <label>오늘 외운 단어 수
+                <input id="studentDailyWordCount" type="number" min="0" inputmode="numeric" placeholder="예: 40">
+              </label>
+              <button class="primary" id="saveStudentDailyWord" type="button">단어 수 저장</button>
+              <p id="studentDailyWordStatus">오늘 외운 단어 수를 입력해주세요.</p>
+            </div>
+            <div>
+              <p class="eyebrow">Reading & Grammar</p>
+              <h3 style="margin:0 0 10px;">오늘 배운 진도 체크</h3>
+              <div class="student-progress-check-list" id="studentProgressChecklist"></div>
+            </div>
+          </div>
+        </section>
 
         <section class="panel">
           <div class="panel-head">
@@ -3028,13 +3118,13 @@ select[multiple] {
       $("#studentPinStatus").textContent = !isTeacherAccount() && studentPinSession.studentId
         ? `${student()?.name || "학생"} 접속 중`
         : "4자리 번호를 입력해주세요.";
-      $("#workspaceEyebrow").textContent = isTeacherAccount() ? "Learning Dashboard" : "Student Word Check";
-      $("#workspaceTitle").textContent = isTeacherAccount() ? "슬아영어 학습 대시보드" : "나의 단어 학습";
+      $("#workspaceEyebrow").textContent = isTeacherAccount() ? "Learning Dashboard" : "Student Study Check";
+      $("#workspaceTitle").textContent = isTeacherAccount() ? "슬아영어 학습 대시보드" : "나의 학습 체크";
       $("#studentSelect").value = selectedStudentId;
       $("#studentSelect").disabled = !isTeacherAccount();
       $("#accountModeText").textContent = isTeacherAccount()
         ? "선생님은 전체 자료 입력, 상담기록, 리포트 생성을 관리합니다."
-        : "학생은 4자리 번호로 접속해 자기 단어 암기 체크만 저장합니다.";
+        : "학생은 4자리 번호로 접속해 단어 암기량과 학습 진도를 직접 체크합니다.";
 
       const activeView = $(".view.active")?.id;
       if (!activeView || !viewAllowed(activeView)) activateView(defaultViewForRole());
@@ -3384,9 +3474,11 @@ select[multiple] {
     }
 
     function progressStatusByCategory(progress, category) {
-      return progress.some((item) => item.category === category)
-        ? statusBadge("완료")
-        : statusBadge("입력전", "warn");
+      const matching = progress.filter((item) => item.category === category);
+      if (!matching.length) return statusBadge("입력전", "warn");
+      return matching.every((item) => isStudentProgressChecked(item))
+        ? statusBadge("학생 완료")
+        : statusBadge("학생 확인 전", "warn");
     }
 
     function isHomeworkSkipped(value) {
@@ -3802,28 +3894,50 @@ select[multiple] {
         .join("|");
     }
 
+    function dailyWordMemoryKey(studentId, date) {
+      return `daily-word|${encodeURIComponent(studentId)}|${encodeURIComponent(date)}`;
+    }
+
+    function progressCheckKey(record) {
+      return ["progress-check", record.studentId, record.date, record.bookId || record.manualLesson || "", unitsForRecord(record).join("-")]
+        .map((value) => encodeURIComponent(String(value || "")))
+        .join("|");
+    }
+
     function memoryCheckFor(key) {
       return data.wordMemoryChecks.find((item) => item.key === key);
     }
 
+    function isDailyWordMemory(record) {
+      return record?.key?.startsWith("daily-word|");
+    }
+
+    function isProgressCheck(record) {
+      return record?.key?.startsWith("progress-check|");
+    }
+
+    function isStudentProgressChecked(progress) {
+      return Boolean(memoryCheckFor(progressCheckKey(progress))?.checked);
+    }
+
     function wordMemorySummary(studentId) {
-      const checks = data.wordMemoryChecks.filter((item) => item.studentId === studentId && item.checked);
+      const dailyChecks = data.wordMemoryChecks.filter((item) => item.studentId === studentId && item.checked && isDailyWordMemory(item));
+      const legacyChecks = data.wordMemoryChecks.filter((item) => item.studentId === studentId && item.checked && !isDailyWordMemory(item) && !isProgressCheck(item));
+      const checks = dailyChecks.length ? dailyChecks : legacyChecks;
       return {
         checkedCount: checks.length,
         memorizedTotal: checks.reduce((sum, item) => sum + (Number(item.memorized) || 0), 0)
       };
     }
 
-    function saveWordMemoryCheck(key, updates) {
-      const baseTest = wordsFor(selectedStudentId).find((item) => wordMemoryKey(item) === key);
-      if (!baseTest) return;
+    function saveStudentStudyCheck(key, updates) {
       let record = data.wordMemoryChecks.find((item) => item.key === key);
       if (!record) {
         record = {
           studentId: selectedStudentId,
           key,
           checked: false,
-          memorized: Number(baseTest.memorized) || Number(baseTest.max) || 0,
+          memorized: 0,
           updatedAt: ""
         };
         data.wordMemoryChecks.push(record);
@@ -3833,12 +3947,25 @@ select[multiple] {
       saveStudentPinMemoryRemote(record);
     }
 
+    function saveWordMemoryCheck(key, updates) {
+      const baseTest = wordsFor(selectedStudentId).find((item) => wordMemoryKey(item) === key);
+      if (!baseTest) return;
+      const existing = memoryCheckFor(key);
+      saveStudentStudyCheck(key, {
+        checked: Boolean(updates.checked),
+        memorized: Number.isFinite(Number(updates.memorized)) ? Number(updates.memorized) : Number(existing?.memorized) || Number(baseTest.memorized) || Number(baseTest.max) || 0
+      });
+    }
+
     function renderStudentPortal() {
       const active = student();
       if (!active) {
         $("#studentPortalName").textContent = "학생 계정";
         $("#studentPortalSummary").innerHTML = `<div class="empty">학생을 먼저 추가해주세요.</div>`;
         $("#studentWordChecklist").innerHTML = `<div class="empty">단어테스트 내역이 없습니다.</div>`;
+        $("#studentDailyWordCount").value = "";
+        $("#studentDailyWordStatus").textContent = "학생 접속 후 오늘 외운 단어 수를 입력할 수 있어요.";
+        $("#studentProgressChecklist").innerHTML = `<div class="empty">학생 접속 후 오늘 진도를 확인할 수 있어요.</div>`;
         $("#studentTimelineTable").innerHTML = `<tr><td colspan="4">이번달 입력 내역이 아직 없습니다.</td></tr>`;
         return;
       }
@@ -3876,6 +4003,31 @@ select[multiple] {
           `;
         }).join("")
         : `<div class="empty">이번달 단어테스트가 아직 없습니다.</div>`;
+
+      const studyDate = todayString();
+      const dailyWord = memoryCheckFor(dailyWordMemoryKey(active.id, studyDate));
+      $("#studentDailyWordCount").value = dailyWord?.memorized ?? "";
+      $("#studentDailyWordStatus").textContent = dailyWord?.updatedAt
+        ? `${dateLabel(studyDate)} 기록이 저장되었습니다.`
+        : `${dateLabel(studyDate)} 외운 단어 수를 입력해주세요.`;
+
+      const todayProgress = progressFor(active.id)
+        .filter((item) => item.date === studyDate && ["독해", "문법"].includes(item.category));
+      $("#studentProgressChecklist").innerHTML = todayProgress.length
+        ? todayProgress.map((item) => {
+          const key = progressCheckKey(item);
+          const checked = Boolean(memoryCheckFor(key)?.checked);
+          return `
+            <label class="student-progress-check-row">
+              <input type="checkbox" ${checked ? "checked" : ""} data-progress-check="${key}" aria-label="${lessonLabel(item)} 학습 완료">
+              <span>
+                <strong>${item.category} · ${lessonLabel(item)}</strong>
+                <span>${dateLabel(item.date)} · 공부를 마쳤다면 체크해주세요.</span>
+              </span>
+            </label>
+          `;
+        }).join("")
+        : `<div class="empty">오늘 선생님이 등록한 독해·문법 진도가 없습니다.</div>`;
 
       const rows = [
         ...monthlyFor(active.id).map((item) => ["월말", item.section, item.range, `${item.score}점`]),
@@ -4387,10 +4539,10 @@ select[multiple] {
           p_memorized: Number(record.memorized) || 0
         });
         if (error) throw error;
-        setSupabaseStatus("단어 체크 저장 완료", "online");
+        setSupabaseStatus("학습 체크 저장 완료", "online");
       } catch (error) {
         console.error(error);
-        setSupabaseStatus(`단어 체크 저장 실패: ${supabaseErrorMessage(error)}`, "warn");
+        setSupabaseStatus(`학습 체크 저장 실패: ${supabaseErrorMessage(error)}`, "warn");
       }
     }
 
@@ -5673,6 +5825,21 @@ select[multiple] {
           checked: Boolean(checkbox?.checked),
           memorized: Number(input.value) || 0
         });
+      });
+
+      $("#saveStudentDailyWord").addEventListener("click", () => {
+        const active = student();
+        if (!active) return;
+        const count = Math.max(0, Number($("#studentDailyWordCount").value) || 0);
+        saveStudentStudyCheck(dailyWordMemoryKey(active.id, todayString()), { checked: true, memorized: count });
+        renderStudentPortal();
+      });
+
+      $("#studentProgressChecklist").addEventListener("change", (event) => {
+        const checkbox = event.target.closest("[data-progress-check]");
+        if (!checkbox) return;
+        saveStudentStudyCheck(checkbox.dataset.progressCheck, { checked: checkbox.checked, memorized: 0 });
+        renderStudentPortal();
       });
 
       $("#addStudentButton").addEventListener("click", saveStudent);
