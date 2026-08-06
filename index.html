@@ -453,6 +453,21 @@ select[multiple] {
       margin-bottom: 14px;
     }
 
+    .compact-label {
+      display: grid;
+      gap: 5px;
+      min-width: 158px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .compact-label input {
+      min-height: 38px;
+      padding: 0 10px;
+      font-size: 14px;
+    }
+
     .button-row {
       display: flex;
       flex-wrap: wrap;
@@ -2275,12 +2290,15 @@ select[multiple] {
           <div class="panel-head">
             <div>
               <p class="eyebrow">Today Study</p>
-              <h2>오늘 학습 기록</h2>
+              <h2 id="studentStudyHeading">오늘 학습 기록</h2>
             </div>
+            <label class="compact-label">학습 날짜
+              <input id="studentStudyDate" type="date">
+            </label>
           </div>
           <div class="student-study-grid">
             <div class="student-daily-word">
-              <label>오늘 외운 단어 수
+              <label>외운 단어 수
                 <input id="studentDailyWordCount" type="number" min="0" inputmode="numeric" placeholder="예: 40">
               </label>
               <button class="primary" id="saveStudentDailyWord" type="button">단어 수 저장</button>
@@ -2841,6 +2859,7 @@ select[multiple] {
     let dashboardDate = todayString();
     let dashboardSearch = "";
     let studentSelfStudy = { category: "", bookId: "" };
+    let studentStudyDate = todayString();
     let editingState = { type: "", index: -1 };
     let studentEditId = "";
     let counselingEditIndex = -1;
@@ -4078,14 +4097,18 @@ select[multiple] {
     }
 
     function renderStudentPortal() {
+      const studyDate = /^\d{4}-\d{2}-\d{2}$/.test(studentStudyDate) ? studentStudyDate : todayString();
+      studentStudyDate = studyDate;
+      $("#studentStudyDate").value = studyDate;
+      $("#studentStudyHeading").textContent = studyDate === todayString() ? "오늘 학습 기록" : `${dateLabel(studyDate)} 학습 기록`;
       const active = student();
       if (!active) {
         $("#studentPortalName").textContent = "학생 계정";
         $("#studentPortalSummary").innerHTML = `<div class="empty">학생을 먼저 추가해주세요.</div>`;
         $("#studentWordChecklist").innerHTML = `<div class="empty">단어테스트 내역이 없습니다.</div>`;
         $("#studentDailyWordCount").value = "";
-        $("#studentDailyWordStatus").textContent = "학생 접속 후 오늘 외운 단어 수를 입력할 수 있어요.";
-        $("#studentProgressChecklist").innerHTML = `<div class="empty">학생 접속 후 오늘 진도를 확인할 수 있어요.</div>`;
+        $("#studentDailyWordStatus").textContent = "학생 접속 후 선택한 날짜의 외운 단어 수를 입력할 수 있어요.";
+        $("#studentProgressChecklist").innerHTML = `<div class="empty">학생 접속 후 선택한 날짜의 진도를 확인할 수 있어요.</div>`;
         renderStudentSelfStudyPicker(null);
         $("#studentTimelineTable").innerHTML = `<tr><td colspan="4">이번달 입력 내역이 아직 없습니다.</td></tr>`;
         return;
@@ -4125,7 +4148,6 @@ select[multiple] {
         }).join("")
         : `<div class="empty">이번달 단어테스트가 아직 없습니다.</div>`;
 
-      const studyDate = todayString();
       const dailyWord = memoryCheckFor(dailyWordMemoryKey(active.id, studyDate));
       $("#studentDailyWordCount").value = dailyWord?.memorized ?? "";
       $("#studentDailyWordStatus").textContent = dailyWord?.updatedAt
@@ -4166,7 +4188,7 @@ select[multiple] {
         });
       $("#studentProgressChecklist").innerHTML = [...teacherProgressRows, ...selfStudyRows].length
         ? [...teacherProgressRows, ...selfStudyRows].join("")
-        : `<div class="empty">오늘 선생님이 등록한 독해·문법 진도가 없습니다. 위에서 과목을 선택해 직접 기록할 수 있어요.</div>`;
+        : `<div class="empty">${dateLabel(studyDate)}에 선생님이 등록한 독해·문법 진도가 없습니다. 위에서 과목을 선택해 직접 기록할 수 있어요.</div>`;
       renderStudentSelfStudyPicker(active);
 
       const rows = [
@@ -4661,6 +4683,7 @@ select[multiple] {
           selectedStudentId = incoming.students[0].id;
           studentPinSession = { studentId: selectedStudentId, accessCode: code };
           accountState = { role: "student", studentId: selectedStudentId };
+          studentStudyDate = todayString();
           saveStudentPinSession();
           saveAccountState();
           saveLocalDataOnly();
@@ -4684,6 +4707,7 @@ select[multiple] {
       selectedStudentId = localStudent.id;
       studentPinSession = { studentId: localStudent.id, accessCode: code };
       accountState = { role: "student", studentId: localStudent.id };
+      studentStudyDate = todayString();
       saveStudentPinSession();
       saveAccountState();
       setSupabaseStatus(`${localStudent.name} 접속됨 · 입실 기록 완료`, "online");
@@ -5991,11 +6015,17 @@ select[multiple] {
         });
       });
 
+      $("#studentStudyDate").addEventListener("change", (event) => {
+        studentStudyDate = event.target.value || todayString();
+        studentSelfStudy = { category: "", bookId: "" };
+        renderStudentPortal();
+      });
+
       $("#saveStudentDailyWord").addEventListener("click", () => {
         const active = student();
         if (!active) return;
         const count = Math.max(0, Number($("#studentDailyWordCount").value) || 0);
-        saveStudentStudyCheck(dailyWordMemoryKey(active.id, todayString()), { checked: true, memorized: count });
+        saveStudentStudyCheck(dailyWordMemoryKey(active.id, studentStudyDate), { checked: true, memorized: count });
         renderStudentPortal();
       });
 
@@ -6025,7 +6055,7 @@ select[multiple] {
         const units = Array.from($("#studentSelfStudyUnits").selectedOptions).map((option) => option.value);
         if (!active || !studentSelfStudy.category || !studentSelfStudy.bookId || !units.length) return;
         saveStudentStudyCheck(
-          selfStudyCheckKey(active.id, todayString(), studentSelfStudy.category, studentSelfStudy.bookId, units),
+          selfStudyCheckKey(active.id, studentStudyDate, studentSelfStudy.category, studentSelfStudy.bookId, units),
           { checked: true, memorized: 0 }
         );
         studentSelfStudy = { category: "", bookId: "" };
