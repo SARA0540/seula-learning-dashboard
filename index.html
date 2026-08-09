@@ -4344,10 +4344,29 @@ select[multiple] {
         : "선택한 진도를 저장해주세요.";
       renderStudentSelfStudyPicker(active);
 
+      const studentDailyWordRows = data.wordMemoryChecks
+        .filter((item) => item.studentId === active.id && item.checked && isDailyWordMemory(item))
+        .map((item) => {
+          const parts = String(item.key).split("|").map((value) => decodeURIComponent(value));
+          return { date: parts[2] || "", memorized: Number(item.memorized) || 0 };
+        })
+        .filter((item) => item.date.startsWith(selectedMonth))
+        .map((item) => ["학생 단어", dateLabel(item.date), "직접 입력 암기량", `${item.memorized}개 · 저장 완료`]);
+      const studentSelfStudyRows = data.wordMemoryChecks
+        .filter((item) => item.studentId === active.id && item.checked && isSelfStudyCheck(item))
+        .map((item) => selfStudyCheckInfo(item))
+        .filter((info) => info?.date?.startsWith(selectedMonth))
+        .map((info) => {
+          const book = textbookById(info.bookId);
+          const lesson = book ? `${textbookLabel(book)} ${bookUnitsLabel(book, info.units)}` : unitListLabel(info.units);
+          return ["학생 진도", dateLabel(info.date), `${info.category} · ${lesson}`, "저장 완료"];
+        });
       const rows = [
         ...monthlyFor(active.id).map((item) => ["월말", item.section, item.range, `${item.score}점`]),
         ...wordTests.map((item) => ["단어", dateLabel(item.date), wordTestLabel(item), `${item.score}/${item.max}`]),
-        ...progressFor(active.id).sort((a, b) => a.date.localeCompare(b.date)).map((item) => ["진도", dateLabel(item.date), lessonLabel(item), `${item.homework} · ${item.memo}`])
+        ...progressFor(active.id).sort((a, b) => a.date.localeCompare(b.date)).map((item) => ["진도", dateLabel(item.date), lessonLabel(item), `${item.homework} · ${item.memo}`]),
+        ...studentDailyWordRows,
+        ...studentSelfStudyRows
       ];
 
       $("#studentTimelineTable").innerHTML = rows.length
@@ -4690,6 +4709,7 @@ select[multiple] {
         data.wordMemoryChecks = [...merged.values()];
         saveLocalDataOnly();
         if ($("#dashboardView").classList.contains("active")) renderDailyStatus();
+        if ($("#inputView").classList.contains("active")) renderRecent();
       } catch (error) {
         console.warn("Student check refresh failed", error);
       }
@@ -6208,12 +6228,22 @@ select[multiple] {
         renderStudentPortal();
       });
 
-      $("#saveStudentDailyWord").addEventListener("click", () => {
+      $("#saveStudentDailyWord").addEventListener("click", async () => {
         const active = student();
         if (!active) return;
         const count = Math.max(0, Number($("#studentDailyWordCount").value) || 0);
-        saveStudentStudyCheck(dailyWordMemoryKey(active.id, studentStudyDate), { checked: true, memorized: count });
+        const button = $("#saveStudentDailyWord");
+        button.disabled = true;
+        $("#studentDailyWordStatus").textContent = "선생님 화면에 단어 수를 저장하는 중입니다.";
+        const saved = await saveStudentStudyCheck(
+          dailyWordMemoryKey(active.id, studentStudyDate),
+          { checked: true, memorized: count }
+        );
+        button.disabled = false;
         renderStudentPortal();
+        $("#studentDailyWordStatus").textContent = saved
+          ? `${dateLabel(studentStudyDate)} 단어 수가 선생님 화면에 저장되었습니다.`
+          : "저장에 실패했습니다. 학생 접속 상태를 확인한 뒤 다시 눌러주세요.";
       });
 
       $("#studentProgressChecklist").addEventListener("change", (event) => {
