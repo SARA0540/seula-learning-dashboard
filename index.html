@@ -2503,6 +2503,12 @@ select[multiple] {
                 <option>듣기</option>
               </select>
             </label>
+            <label id="progressModeLabel">입력 방식
+              <select id="progressMode">
+                <option value="book">교재 불러오기</option>
+                <option value="manual">직접 입력</option>
+              </select>
+            </label>
             <label id="progressBookLabel">교재명
               <select id="progressBook"></select>
             </label>
@@ -2512,7 +2518,7 @@ select[multiple] {
                 <span class="unit-picker-menu hidden" id="progressUnitMenu"></span>
               </span>
             </label>
-            <label id="progressManualLabel" class="hidden">수기 진도
+            <label id="progressManualLabel" class="hidden"><span id="progressManualTitle">수기 진도</span>
               <input id="progressManual" type="text" placeholder="예: 단어 Day 12">
             </label>
             <label>숙제 상태
@@ -5084,9 +5090,10 @@ select[multiple] {
         const bookId = record.bookId || inferBookIdFromText(record.lesson);
         const category = record.category || textbookById(bookId)?.category || inferCategoryFromText(record.lesson);
         $("#progressCategory").value = category;
+        $("#progressMode").value = usesLinkedTextbook(category) && bookId ? "book" : "manual";
         updateProgressInputMode();
         const units = unitsForRecord(record);
-        if (usesLinkedTextbook(category) && bookId) {
+        if ($("#progressMode").value === "book" && bookId) {
           $("#progressBook").value = bookId;
           renderProgressUnitOptions(units.length ? units : [1]);
         } else {
@@ -5566,11 +5573,15 @@ select[multiple] {
 
     function updateProgressInputMode() {
       const category = $("#progressCategory").value;
-      const linked = usesLinkedTextbook(category);
+      const supportsBooks = usesLinkedTextbook(category);
+      if (!supportsBooks) $("#progressMode").value = "manual";
+      const linked = supportsBooks && $("#progressMode").value === "book";
+      $("#progressModeLabel").classList.toggle("hidden", !supportsBooks);
       $("#progressBookLabel").classList.toggle("hidden", !linked);
       $("#progressUnitLabel").classList.toggle("hidden", !linked);
       $("#reloadBooksButton").classList.toggle("hidden", !linked);
       $("#progressManualLabel").classList.toggle("hidden", linked);
+      $("#progressManualTitle").textContent = supportsBooks ? `${category} 진도 직접 입력` : "수기 진도";
       $("#progressBook").disabled = !linked;
       $("#progressUnitButton").disabled = !linked;
       $("#progressUnitMenu").classList.add("hidden");
@@ -5856,7 +5867,7 @@ select[multiple] {
 
     function saveProgress() {
       const category = $("#progressCategory").value;
-      const linked = usesLinkedTextbook(category);
+      const linked = usesLinkedTextbook(category) && $("#progressMode").value === "book";
       const book = linked ? textbookById($("#progressBook").value) : null;
       const units = linked ? selectedProgressUnits() : [];
       const unit = Math.max(0, ...units);
@@ -6450,7 +6461,11 @@ select[multiple] {
       $("#saveWordButton").addEventListener("click", saveWordTest);
       $("#wordBook").addEventListener("change", () => renderWordUnitOptions());
       $("#saveProgressButton").addEventListener("click", saveProgress);
-      $("#progressCategory").addEventListener("change", updateProgressInputMode);
+      $("#progressCategory").addEventListener("change", () => {
+        $("#progressMode").value = usesLinkedTextbook($("#progressCategory").value) ? "book" : "manual";
+        updateProgressInputMode();
+      });
+      $("#progressMode").addEventListener("change", updateProgressInputMode);
       $("#progressBook").addEventListener("change", () => renderProgressUnitOptions());
       $("#progressUnitButton").addEventListener("click", () => {
         $("#progressUnitMenu").classList.toggle("hidden");
