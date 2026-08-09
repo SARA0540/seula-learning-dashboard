@@ -3595,9 +3595,10 @@ select[multiple] {
       const book = textbookById(record?.bookId);
       const unit = Number(record?.unit) || extractUnit(record?.unitText || record?.range);
       const unitText = normalizeWordUnitText(record?.unitText || (unit ? `Unit ${String(unit).padStart(2, "0")}` : ""));
-      if (book && unitText) return `${book.name} ${unitText}`;
-      if (book) return book.name;
-      return String(record?.range || "-").replace(/^\[[^\]]+\]\s*/, "").replace(/\s*·\s*/g, " ");
+      const shortBookName = (value) => String(value || "").replace(/\s+voca\b/ig, "").replace(/\s{2,}/g, " ").trim();
+      if (book && unitText) return `${shortBookName(book.name)} ${unitText}`;
+      if (book) return shortBookName(book.name);
+      return shortBookName(String(record?.range || "-").replace(/^\[[^\]]+\]\s*/, "").replace(/\s*·\s*/g, " "));
     }
 
     function reportLessonLabel(record) {
