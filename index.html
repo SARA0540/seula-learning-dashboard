@@ -5366,23 +5366,15 @@ select[multiple] {
       const progressDates = [...new Set([
         ...wordTests.map((item) => item.date),
         ...progress.map((item) => item.date),
-        ...studentDailyWords.map((item) => item.date),
         ...studentSelfStudy.map((item) => item.date)
       ].filter(Boolean))].sort((a, b) => a.localeCompare(b));
       const progressRows = progressDates.map((date) => {
         const dayWords = wordTests.filter((item) => item.date === date);
         const dayProgress = progress.filter((item) => item.date === date);
         const byCategory = (category) => dayProgress.filter((item) => item.category === category);
-        const studentMemorized = studentDailyWordsByDate.get(date) || 0;
         const studentProgressByCategory = (category) => studentSelfStudy.filter((item) => item.date === date && item.category === category);
-        const teacherWordRange = progressReportText(dayWords, reportWordRangeLabel);
-        const teacherWordScore = progressReportText(dayWords, (item) => item.score);
-        const wordRange = studentMemorized
-          ? `${teacherWordRange ? `${teacherWordRange}<br>` : ""}학생 암기량`
-          : teacherWordRange;
-        const wordScore = studentMemorized
-          ? `${teacherWordScore ? `${teacherWordScore}<br>` : ""}${studentMemorized}개`
-          : teacherWordScore;
+        const wordRange = progressReportText(dayWords, reportWordRangeLabel);
+        const wordScore = progressReportText(dayWords, (item) => item.score);
         const wordMax = progressReportText(dayWords, (item) => item.max);
         const readingProgress = progressReportText(byCategory("독해"), reportLessonLabel)
           + (studentProgressByCategory("독해").length ? `${byCategory("독해").length ? "<br>" : ""}${progressReportText(studentProgressByCategory("독해"), studentStudyLabel)}` : "");
