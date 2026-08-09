@@ -2195,6 +2195,7 @@ select[multiple] {
                   <th>출석</th>
                   <th>독해 진도</th>
                   <th>문법 진도</th>
+                  <th>단어 암기</th>
                   <th>숙제</th>
                   <th>관리</th>
                 </tr>
@@ -3564,12 +3565,28 @@ select[multiple] {
       return Array.from(String(name || "학"))[0] || "학";
     }
 
-    function progressStatusByCategory(progress, category) {
+    function selfStudyUnitsFor(studentId, date, category) {
+      return [...new Set(data.wordMemoryChecks
+        .filter((item) => item.studentId === studentId && item.checked && isSelfStudyCheck(item))
+        .map((item) => selfStudyCheckInfo(item))
+        .filter((info) => info?.date === date && info.category === category)
+        .flatMap((info) => normalizeUnits(info.units)))];
+    }
+
+    function progressStatusByCategory(progress, category, studentId = "", date = dashboardDate) {
       const matching = progress.filter((item) => item.category === category);
-      if (!matching.length) return statusBadge("입력전", "warn");
+      if (!matching.length) {
+        const selfStudyUnits = selfStudyUnitsFor(studentId, date, category);
+        return selfStudyUnits.length ? statusBadge(`학생 ${selfStudyUnits.length}U`) : statusBadge("입력전", "warn");
+      }
       return matching.every((item) => isStudentProgressChecked(item))
         ? statusBadge("학생 완료")
         : statusBadge("학생 확인 전", "warn");
+    }
+
+    function dailyWordMemoryStatus(studentId, date = dashboardDate) {
+      const record = memoryCheckFor(dailyWordMemoryKey(studentId, date));
+      return record?.checked ? statusBadge(`${Number(record.memorized) || 0}개`) : statusBadge("미입력", "neutral");
     }
 
     function isHomeworkSkipped(value) {
@@ -3637,14 +3654,15 @@ select[multiple] {
                   ${["미확인", "출석", "지각", "결석"].map((option) => `<option value="${option}" ${attendance === option ? "selected" : ""}>${option}</option>`).join("")}
                 </select>
               </td>
-              <td>${progressStatusByCategory(dayProgress, "독해")}</td>
-              <td>${progressStatusByCategory(dayProgress, "문법")}</td>
+              <td>${progressStatusByCategory(dayProgress, "독해", item.id, dashboardDate)}</td>
+              <td>${progressStatusByCategory(dayProgress, "문법", item.id, dashboardDate)}</td>
+              <td>${dailyWordMemoryStatus(item.id, dashboardDate)}</td>
               <td>${homeworkStatus(dayProgress)}</td>
               <td><button class="daily-action-button" type="button" data-daily-student="${item.id}" title="자료 입력으로 이동" aria-label="${item.name} 자료 입력으로 이동">⋯</button></td>
             </tr>
           `;
         }).join("")
-        : `<tr><td colspan="7">검색 결과가 없습니다.</td></tr>`;
+        : `<tr><td colspan="8">검색 결과가 없습니다.</td></tr>`;
     }
 
     function saveDailyStatus(studentId, updates) {
@@ -4515,9 +4533,41 @@ select[multiple] {
       }
     }
 
+    async function refreshTeacherStudentChecks() {
+      if (!isTeacherAccount() || !supabaseUser || document.hidden) return;
+      const client = getSupabaseClient();
+      if (!client) return;
+      try {
+        const { data: rows, error } = await client
+          .from("word_memory_checks")
+          .select("key, student_id, checked, memorized, updated_at");
+        if (error) throw error;
+        const merged = new Map(data.wordMemoryChecks.map((item) => [item.key, item]));
+        (rows || []).forEach((item) => {
+          merged.set(item.key, {
+            key: item.key,
+            studentId: item.student_id,
+            checked: Boolean(item.checked),
+            memorized: Number(item.memorized) || 0,
+            updatedAt: item.updated_at || ""
+          });
+        });
+        data.wordMemoryChecks = [...merged.values()];
+        saveLocalDataOnly();
+        if ($("#dashboardView").classList.contains("active")) renderDailyStatus();
+      } catch (error) {
+        console.warn("Student check refresh failed", error);
+      }
+    }
+
     function startAttendanceRefresh() {
       clearInterval(attendanceRefreshTimer);
-      attendanceRefreshTimer = setInterval(refreshTeacherAttendance, 15000);
+      const refreshDashboard = () => {
+        refreshTeacherAttendance();
+        refreshTeacherStudentChecks();
+      };
+      attendanceRefreshTimer = setInterval(refreshDashboard, 15000);
+      refreshDashboard();
     }
 
     async function clearTeacherRemoteTables(client) {
@@ -6276,7 +6326,10 @@ select[multiple] {
     renderAll();
     startAttendanceRefresh();
     document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) refreshTeacherAttendance();
+      if (!document.hidden) {
+        refreshTeacherAttendance();
+        refreshTeacherStudentChecks();
+      }
     });
     initSupabase().catch((error) => {
       console.error(error);
