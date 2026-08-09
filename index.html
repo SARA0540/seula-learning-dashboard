@@ -728,6 +728,20 @@ select[multiple] {
       gap: 9px;
     }
 
+    .student-progress-save {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .student-progress-save p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
     .student-self-study-actions {
       display: flex;
       flex-wrap: wrap;
@@ -2322,6 +2336,10 @@ select[multiple] {
                 <button class="primary" id="saveStudentSelfStudy" type="button">진도 체크</button>
               </div>
               <div class="student-progress-check-list" id="studentProgressChecklist"></div>
+              <div class="student-progress-save">
+                <button class="primary" id="saveStudentProgress" type="button">진도 저장</button>
+                <p id="studentProgressStatus">선택한 진도를 저장해주세요.</p>
+              </div>
             </div>
           </div>
         </section>
@@ -4051,6 +4069,18 @@ select[multiple] {
       return Boolean(memoryCheckFor(progressCheckKey(progress))?.checked);
     }
 
+    function studentProgressCheckRecords(studentId, date) {
+      const teacherProgressKeys = new Set(progressFor(studentId)
+        .filter((item) => item.date === date && ["독해", "문법"].includes(item.category))
+        .map((item) => progressCheckKey(item)));
+      return data.wordMemoryChecks.filter((item) => {
+        if (item.studentId !== studentId) return false;
+        if (teacherProgressKeys.has(item.key)) return true;
+        const info = isSelfStudyCheck(item) ? selfStudyCheckInfo(item) : null;
+        return info?.date === date;
+      });
+    }
+
     function wordMemorySummary(studentId) {
       const dailyChecks = data.wordMemoryChecks.filter((item) => item.studentId === studentId && item.checked && isDailyWordMemory(item));
       const legacyChecks = data.wordMemoryChecks.filter((item) => item.studentId === studentId && item.checked && !isDailyWordMemory(item) && !isProgressCheck(item) && !isSelfStudyCheck(item));
@@ -4075,7 +4105,7 @@ select[multiple] {
       }
       Object.assign(record, updates, { updatedAt: new Date().toISOString() });
       saveData();
-      saveStudentPinMemoryRemote(record);
+      return saveStudentPinMemoryRemote(record);
     }
 
     function saveWordMemoryCheck(key, updates) {
@@ -4127,6 +4157,7 @@ select[multiple] {
         $("#studentDailyWordCount").value = "";
         $("#studentDailyWordStatus").textContent = "학생 접속 후 선택한 날짜의 외운 단어 수를 입력할 수 있어요.";
         $("#studentProgressChecklist").innerHTML = `<div class="empty">학생 접속 후 선택한 날짜의 진도를 확인할 수 있어요.</div>`;
+        $("#studentProgressStatus").textContent = "학생 접속 후 진도를 저장할 수 있어요.";
         renderStudentSelfStudyPicker(null);
         $("#studentTimelineTable").innerHTML = `<tr><td colspan="4">이번달 입력 내역이 아직 없습니다.</td></tr>`;
         return;
@@ -4207,6 +4238,10 @@ select[multiple] {
       $("#studentProgressChecklist").innerHTML = [...teacherProgressRows, ...selfStudyRows].length
         ? [...teacherProgressRows, ...selfStudyRows].join("")
         : `<div class="empty">${dateLabel(studyDate)}에 선생님이 등록한 독해·문법 진도가 없습니다. 위에서 과목을 선택해 직접 기록할 수 있어요.</div>`;
+      const savedProgressCount = studentProgressCheckRecords(active.id, studyDate).filter((item) => item.checked).length;
+      $("#studentProgressStatus").textContent = savedProgressCount
+        ? `${dateLabel(studyDate)} 진도 ${savedProgressCount}건이 선택되어 있습니다.`
+        : "선택한 진도를 저장해주세요.";
       renderStudentSelfStudyPicker(active);
 
       const rows = [
@@ -4768,7 +4803,7 @@ select[multiple] {
 
     async function saveStudentPinMemoryRemote(record) {
       const client = getSupabaseClient();
-      if (!client || !studentPinSession.accessCode || isTeacherAccount()) return;
+      if (!client || !studentPinSession.accessCode || isTeacherAccount()) return false;
       try {
         const { error } = await client.rpc("student_memory_check_upsert", {
           p_access_code: studentPinSession.accessCode,
@@ -4778,9 +4813,11 @@ select[multiple] {
         });
         if (error) throw error;
         setSupabaseStatus("학습 체크 저장 완료", "online");
+        return true;
       } catch (error) {
         console.error(error);
         setSupabaseStatus(`학습 체크 저장 실패: ${supabaseErrorMessage(error)}`, "warn");
+        return false;
       }
     }
 
@@ -6086,6 +6123,24 @@ select[multiple] {
         if (selfStudyCheckbox) saveStudentStudyCheck(selfStudyCheckbox.dataset.selfStudyCheck, { checked: selfStudyCheckbox.checked, memorized: 0 });
         if (!checkbox && !selfStudyCheckbox) return;
         renderStudentPortal();
+      });
+
+      $("#saveStudentProgress").addEventListener("click", async () => {
+        const active = student();
+        if (!active) return;
+        const selectedRecords = studentProgressCheckRecords(active.id, studentStudyDate).filter((item) => item.checked);
+        if (!selectedRecords.length) {
+          $("#studentProgressStatus").textContent = "독해 또는 문법 Unit을 먼저 선택해주세요.";
+          return;
+        }
+        const button = $("#saveStudentProgress");
+        button.disabled = true;
+        $("#studentProgressStatus").textContent = "선생님 화면에 진도를 저장하는 중입니다.";
+        const results = await Promise.all(selectedRecords.map((record) => saveStudentPinMemoryRemote(record)));
+        button.disabled = false;
+        $("#studentProgressStatus").textContent = results.every(Boolean)
+          ? `${dateLabel(studentStudyDate)} 진도 ${selectedRecords.length}건이 저장되었습니다.`
+          : "저장에 실패했습니다. 접속 상태를 확인한 뒤 다시 눌러주세요.";
       });
 
       $("#studentSelfStudyActions").addEventListener("click", (event) => {
