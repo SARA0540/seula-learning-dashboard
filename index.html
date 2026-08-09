@@ -1732,7 +1732,8 @@ select[multiple] {
       border-bottom: 1px solid var(--line);
     }
 
-    body[data-account-role="student"] #studentFilterLabel {
+    body[data-account-role="student"] #studentFilterLabel,
+    body[data-account-role="student"] #classFilterLabel {
       display: none;
     }
 
@@ -2239,6 +2240,10 @@ select[multiple] {
           <label>
             월 선택
             <input id="monthInput" type="month">
+          </label>
+          <label id="classFilterLabel">
+            반 선택
+            <select id="classSelect"></select>
           </label>
           <label id="studentFilterLabel">
             학생 선택
@@ -2946,6 +2951,7 @@ select[multiple] {
     let teacherPinRequested = false;
     let selectedMonth = currentMonth;
     let selectedStudentId = data.students[0]?.id || "";
+    let selectedClassGroup = "";
     let dashboardDate = todayString();
     let dashboardSearch = "";
     let studentSelfStudy = { category: "", bookId: "" };
@@ -3364,6 +3370,19 @@ select[multiple] {
       return `${dayGroup} ${level}`;
     }
 
+    function classGroupLabel(group) {
+      return {
+        "월목 초등학생": "초등부 월목반",
+        "화금 초등학생": "초등부 화금반",
+        "월목 중학생": "중등부 월목반",
+        "화금 중학생": "중등부 화금반"
+      }[group] || group;
+    }
+
+    function classGroups() {
+      return ["월목 초등학생", "화금 초등학생", "월목 중학생", "화금 중학생"];
+    }
+
     function avg(values) {
       const nums = values.filter((value) => Number.isFinite(value));
       if (!nums.length) return null;
@@ -3719,7 +3738,21 @@ select[multiple] {
 
     function renderSelectors() {
       $("#monthInput").value = selectedMonth;
-      $("#studentSelect").innerHTML = data.students.map((item) => `<option value="${item.id}">${item.name}</option>`).join("");
+      const groups = classGroups();
+      if (!groups.includes(selectedClassGroup)) selectedClassGroup = "";
+      $("#classSelect").innerHTML = [
+        `<option value="">전체 반</option>`,
+        ...groups.map((group) => `<option value="${group}">${classGroupLabel(group)}</option>`)
+      ].join("");
+      $("#classSelect").value = selectedClassGroup;
+      $("#classSelect").disabled = !isTeacherAccount();
+      const selectableStudents = isTeacherAccount() && selectedClassGroup
+        ? data.students.filter((item) => classGroupFor(item) === selectedClassGroup)
+        : data.students;
+      if (selectableStudents.length && !selectableStudents.some((item) => item.id === selectedStudentId)) {
+        selectedStudentId = selectableStudents[0].id;
+      }
+      $("#studentSelect").innerHTML = selectableStudents.map((item) => `<option value="${item.id}">${item.name}</option>`).join("");
       $("#studentSelect").value = selectedStudentId;
       $("#studentSelect").disabled = !isTeacherAccount();
     }
@@ -6287,6 +6320,21 @@ select[multiple] {
 
       $("#monthInput").addEventListener("change", (event) => {
         selectedMonth = event.target.value || currentMonth;
+        resetEditState();
+        resetCounselingEdit();
+        renderAll();
+      });
+
+      $("#classSelect").addEventListener("change", (event) => {
+        selectedClassGroup = event.target.value;
+        const students = selectedClassGroup
+          ? data.students.filter((item) => classGroupFor(item) === selectedClassGroup)
+          : data.students;
+        selectedStudentId = students[0]?.id || "";
+        if (isTeacherAccount()) {
+          accountState.studentId = selectedStudentId;
+          saveAccountState();
+        }
         resetEditState();
         resetCounselingEdit();
         renderAll();
