@@ -3290,7 +3290,9 @@ select[multiple] {
       $("#studentSelect").value = selectedStudentId;
       $("#studentSelect").disabled = !isTeacherAccount();
       $("#accountModeText").textContent = isTeacherAccount()
-        ? "선생님은 전체 자료 입력, 상담기록, 리포트 생성을 관리합니다."
+        ? (supabaseUser
+          ? "선생님은 전체 자료 입력, 상담기록, 리포트 생성을 관리합니다. 학생 저장값도 자동으로 불러옵니다."
+          : "학생 저장값을 보려면 상단 Supabase 연결에서 선생님 이메일로 로그인해주세요.")
         : "학생은 4자리 번호로 접속해 단어 암기량과 학습 진도를 직접 체크합니다.";
 
       const activeView = $(".view.active")?.id;
@@ -4011,6 +4013,35 @@ select[multiple] {
         return;
       }
 
+      const studentMemoryRows = data.wordMemoryChecks
+        .filter((item) => item.studentId === active.id && item.checked && isDailyWordMemory(item))
+        .map((item) => {
+          const parts = String(item.key).split("|").map((value) => decodeURIComponent(value));
+          return { item, date: parts[2] || "" };
+        })
+        .filter(({ date }) => date.startsWith(selectedMonth))
+        .map(({ item, date }) => ({
+          type: "student-memory",
+          groupDate: date,
+          sortDate: date,
+          readOnly: true,
+          cells: ["학생 단어", date, "학생 입력 암기량", `${Number(item.memorized) || 0}개 · 저장 완료`]
+        }));
+      const studentProgressRows = data.wordMemoryChecks
+        .filter((item) => item.studentId === active.id && item.checked && isSelfStudyCheck(item))
+        .map((item) => ({ item, info: selfStudyCheckInfo(item) }))
+        .filter(({ info }) => info?.date?.startsWith(selectedMonth))
+        .map(({ info }) => {
+          const book = textbookById(info.bookId);
+          const lesson = book ? `${textbookLabel(book)} ${bookUnitsLabel(book, info.units)}` : unitListLabel(info.units);
+          return {
+            type: "student-progress",
+            groupDate: info.date,
+            sortDate: info.date,
+            readOnly: true,
+            cells: ["학생 진도", info.date, `${info.category} · ${lesson}`, "학생 저장 완료"]
+          };
+        });
       const rows = [
         ...indexedRecordsFor(active.id, "monthlyTests").map(({ item, index }) => ({
           type: "monthly",
@@ -4032,21 +4063,24 @@ select[multiple] {
           groupDate: item.date,
           sortDate: item.date,
           cells: ["진도", item.date, lessonLabel(item), `${item.homework} · ${item.memo}`]
-        }))
+        })),
+        ...studentMemoryRows,
+        ...studentProgressRows
       ].sort((a, b) => a.sortDate.localeCompare(b.sortDate) || a.type.localeCompare(b.type));
 
       $("#recentTable").innerHTML = rows.length
         ? rows.reduce((html, row, index) => {
           const previous = rows[index - 1];
-          const group = previous?.groupDate === row.groupDate ? "" : `<tr class="date-group-row"><td colspan="5">${dateLabel(row.groupDate)}</td></tr>`;
+          const groupLabel = row.groupDate === "월말평가" ? "월말평가" : dateLabel(row.groupDate);
+          const group = previous?.groupDate === row.groupDate ? "" : `<tr class="date-group-row"><td colspan="5">${groupLabel}</td></tr>`;
           return `${html}${group}
             <tr>
               ${row.cells.map((cell) => `<td>${cell}</td>`).join("")}
-              <td>
+              <td>${row.readOnly ? `<span class="muted">학생 저장</span>` : `
                 <div class="inline-actions">
                   <button class="tiny-button" type="button" data-action="edit" data-type="${row.type}" data-index="${row.index}">수정</button>
                   <button class="tiny-button danger-text" type="button" data-action="delete" data-type="${row.type}" data-index="${row.index}">삭제</button>
-                </div>
+                </div>`}
               </td>
             </tr>`;
         }, "")
