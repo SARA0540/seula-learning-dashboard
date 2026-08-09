@@ -4025,7 +4025,7 @@ select[multiple] {
           groupDate: date,
           sortDate: date,
           readOnly: true,
-          cells: ["학생 단어", date, "학생 입력 암기량", `${Number(item.memorized) || 0}개 · 저장 완료`]
+          cells: ["단어", date, "학생 입력 암기량", `${Number(item.memorized) || 0}개 · 학생 저장 완료`]
         }));
       const studentProgressRows = data.wordMemoryChecks
         .filter((item) => item.studentId === active.id && item.checked && isSelfStudyCheck(item))
@@ -4033,13 +4033,13 @@ select[multiple] {
         .filter(({ info }) => info?.date?.startsWith(selectedMonth))
         .map(({ info }) => {
           const book = textbookById(info.bookId);
-          const lesson = book ? `${textbookLabel(book)} ${bookUnitsLabel(book, info.units)}` : unitListLabel(info.units);
+          const lesson = book ? `${textbookLabel(book)} ${bookUnitsLabel(book, info.units)}` : `[${info.category}] ${unitListLabel(info.units)}`;
           return {
             type: "student-progress",
             groupDate: info.date,
             sortDate: info.date,
             readOnly: true,
-            cells: ["학생 진도", info.date, `${info.category} · ${lesson}`, "학생 저장 완료"]
+            cells: ["진도", info.date, lesson, "학생 저장 완료"]
           };
         });
       const rows = [
@@ -4324,12 +4324,12 @@ select[multiple] {
         .filter(({ info }) => info?.date === studyDate)
         .map(({ item, info }) => {
           const book = textbookById(info.bookId);
-          const label = book ? `${textbookLabel(book)} ${bookUnitsLabel(book, info.units)}` : unitListLabel(info.units);
+          const label = book ? `${textbookLabel(book)} ${bookUnitsLabel(book, info.units)}` : `[${info.category}] ${unitListLabel(info.units)}`;
           return `
             <label class="student-progress-check-row">
               <input type="checkbox" checked data-self-study-check="${item.key}" aria-label="${label} 학습 완료">
               <span>
-                <strong>${info.category} · ${escapeHtml(label)}</strong>
+                <strong>${escapeHtml(label)}</strong>
                 <span>내가 선택한 진도입니다.</span>
               </span>
             </label>
@@ -4351,15 +4351,15 @@ select[multiple] {
           return { date: parts[2] || "", memorized: Number(item.memorized) || 0 };
         })
         .filter((item) => item.date.startsWith(selectedMonth))
-        .map((item) => ["학생 단어", dateLabel(item.date), "직접 입력 암기량", `${item.memorized}개 · 저장 완료`]);
+        .map((item) => ["단어", dateLabel(item.date), "직접 입력 암기량", `${item.memorized}개 · 학생 저장 완료`]);
       const studentSelfStudyRows = data.wordMemoryChecks
         .filter((item) => item.studentId === active.id && item.checked && isSelfStudyCheck(item))
         .map((item) => selfStudyCheckInfo(item))
         .filter((info) => info?.date?.startsWith(selectedMonth))
         .map((info) => {
           const book = textbookById(info.bookId);
-          const lesson = book ? `${textbookLabel(book)} ${bookUnitsLabel(book, info.units)}` : unitListLabel(info.units);
-          return ["학생 진도", dateLabel(info.date), `${info.category} · ${lesson}`, "저장 완료"];
+          const lesson = book ? `${textbookLabel(book)} ${bookUnitsLabel(book, info.units)}` : `[${info.category}] ${unitListLabel(info.units)}`;
+          return ["진도", dateLabel(info.date), lesson, "학생 저장 완료"];
         });
       const rows = [
         ...monthlyFor(active.id).map((item) => ["월말", item.section, item.range, `${item.score}점`]),
