@@ -1190,12 +1190,15 @@ select[multiple] {
     }
 
     .report-card.one-page-export {
-      width: 1120px;
-      padding: 24px 30px;
+      width: 794px;
+      min-height: 1123px;
+      padding: 22px 24px;
       border: 0;
       border-radius: 0;
       box-shadow: none;
       box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
     }
 
     .report-title {
@@ -1551,7 +1554,8 @@ select[multiple] {
     }
 
     .report-card.one-page-export .comment-box {
-      min-height: 74px;
+      flex: 1;
+      min-height: 120px;
       padding: 7px;
       font-size: 10px;
       line-height: 1.38;
@@ -6064,7 +6068,7 @@ select[multiple] {
     function fitCanvasToPortraitA4(sourceCanvas) {
       const width = 1600;
       const height = Math.round(width * 297 / 210);
-      const padding = 52;
+      const padding = 38;
       const scale = Math.min(
         (width - padding * 2) / sourceCanvas.width,
         (height - padding * 2) / sourceCanvas.height
@@ -6100,7 +6104,7 @@ select[multiple] {
       holder.style.position = "fixed";
       holder.style.left = "-10000px";
       holder.style.top = "0";
-      holder.style.width = "1120px";
+      holder.style.width = "794px";
       holder.style.background = "#fff";
       holder.appendChild(clone);
       document.body.appendChild(holder);
