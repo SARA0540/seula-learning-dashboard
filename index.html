@@ -4024,21 +4024,21 @@ select[multiple] {
           type: "student-memory",
           groupDate: date,
           sortDate: date,
-          readOnly: true,
+          studentCheckKey: item.key,
           cells: ["단어", date, "학생 입력 암기량", `${Number(item.memorized) || 0}개 · 학생 저장 완료`]
         }));
       const studentProgressRows = data.wordMemoryChecks
         .filter((item) => item.studentId === active.id && item.checked && isSelfStudyCheck(item))
         .map((item) => ({ item, info: selfStudyCheckInfo(item) }))
         .filter(({ info }) => info?.date?.startsWith(selectedMonth))
-        .map(({ info }) => {
+        .map(({ item, info }) => {
           const book = textbookById(info.bookId);
           const lesson = book ? `${textbookLabel(book)} ${bookUnitsLabel(book, info.units)}` : `[${info.category}] ${unitListLabel(info.units)}`;
           return {
             type: "student-progress",
             groupDate: info.date,
             sortDate: info.date,
-            readOnly: true,
+            studentCheckKey: item.key,
             cells: ["진도", info.date, lesson, "학생 저장 완료"]
           };
         });
@@ -4076,7 +4076,11 @@ select[multiple] {
           return `${html}${group}
             <tr>
               ${row.cells.map((cell) => `<td>${cell}</td>`).join("")}
-              <td>${row.readOnly ? `<span class="muted">학생 저장</span>` : `
+              <td>${row.studentCheckKey ? `
+                <div class="inline-actions">
+                  <button class="tiny-button" type="button" data-student-check-edit="${row.studentCheckKey}">수정</button>
+                  <button class="tiny-button danger-text" type="button" data-student-check-delete="${row.studentCheckKey}">삭제</button>
+                </div>` : `
                 <div class="inline-actions">
                   <button class="tiny-button" type="button" data-action="edit" data-type="${row.type}" data-index="${row.index}">수정</button>
                   <button class="tiny-button danger-text" type="button" data-action="delete" data-type="${row.type}" data-index="${row.index}">삭제</button>
@@ -5077,6 +5081,64 @@ select[multiple] {
       if (!window.confirm("이 입력 내역을 삭제할까요?")) return;
       data[collection].splice(index, 1);
       resetEditState();
+      saveData();
+      renderAll();
+    }
+
+    function editStudentSavedCheck(key) {
+      const record = memoryCheckFor(key);
+      if (!record) return;
+
+      if (isDailyWordMemory(record)) {
+        const nextValue = window.prompt("암기한 단어 수를 입력해주세요.", String(Number(record.memorized) || 0));
+        if (nextValue === null) return;
+        const memorized = Number(nextValue);
+        if (!Number.isFinite(memorized) || memorized < 0) {
+          window.alert("0 이상의 숫자를 입력해주세요.");
+          return;
+        }
+        record.memorized = Math.round(memorized);
+        record.checked = true;
+        record.updatedAt = new Date().toISOString();
+        saveData();
+        renderAll();
+        return;
+      }
+
+      const info = selfStudyCheckInfo(record);
+      if (!info) return;
+      const nextDate = window.prompt("학습 날짜를 YYYY-MM-DD 형식으로 입력해주세요.", info.date);
+      if (nextDate === null) return;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)) {
+        window.alert("날짜 형식이 올바르지 않습니다.");
+        return;
+      }
+      const nextUnitsText = window.prompt("학습한 Unit 번호를 쉼표로 구분해 입력해주세요.", normalizeUnits(info.units).join(", "));
+      if (nextUnitsText === null) return;
+      const nextUnits = normalizeUnits(String(nextUnitsText).match(/\d+/g) || []);
+      if (!nextUnits.length) {
+        window.alert("Unit 번호를 하나 이상 입력해주세요.");
+        return;
+      }
+      const nextKey = selfStudyCheckKey(record.studentId, nextDate, info.category, info.bookId, nextUnits);
+      const duplicate = memoryCheckFor(nextKey);
+      if (duplicate && duplicate !== record) {
+        duplicate.checked = true;
+        duplicate.updatedAt = new Date().toISOString();
+        data.wordMemoryChecks = data.wordMemoryChecks.filter((item) => item !== record);
+      } else {
+        record.key = nextKey;
+        record.checked = true;
+        record.updatedAt = new Date().toISOString();
+      }
+      saveData();
+      renderAll();
+    }
+
+    function deleteStudentSavedCheck(key) {
+      const record = memoryCheckFor(key);
+      if (!record || !window.confirm("학생이 저장한 이 기록을 삭제할까요?")) return;
+      data.wordMemoryChecks = data.wordMemoryChecks.filter((item) => item !== record);
       saveData();
       renderAll();
     }
@@ -6450,6 +6512,16 @@ select[multiple] {
       });
 
       $("#recentTable").addEventListener("click", (event) => {
+        const studentEditButton = event.target.closest("button[data-student-check-edit]");
+        const studentDeleteButton = event.target.closest("button[data-student-check-delete]");
+        if (studentEditButton) {
+          editStudentSavedCheck(studentEditButton.dataset.studentCheckEdit);
+          return;
+        }
+        if (studentDeleteButton) {
+          deleteStudentSavedCheck(studentDeleteButton.dataset.studentCheckDelete);
+          return;
+        }
         const button = event.target.closest("button[data-action]");
         if (!button) return;
         const type = button.dataset.type;
