@@ -6061,6 +6061,34 @@ select[multiple] {
       return new Promise((resolve) => canvas.toBlob(resolve, "image/png", 0.96));
     }
 
+    function fitCanvasToPortraitA4(sourceCanvas) {
+      const width = 1600;
+      const height = Math.round(width * 297 / 210);
+      const padding = 52;
+      const scale = Math.min(
+        (width - padding * 2) / sourceCanvas.width,
+        (height - padding * 2) / sourceCanvas.height
+      );
+      const drawWidth = Math.round(sourceCanvas.width * scale);
+      const drawHeight = Math.round(sourceCanvas.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext("2d");
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, width, height);
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = "high";
+      context.drawImage(
+        sourceCanvas,
+        Math.round((width - drawWidth) / 2),
+        Math.round((height - drawHeight) / 2),
+        drawWidth,
+        drawHeight
+      );
+      return canvas;
+    }
+
     async function renderReportPageCanvas() {
       renderReport();
       await document.fonts?.ready;
@@ -6081,7 +6109,7 @@ select[multiple] {
         if (typeof window.html2canvas !== "function") {
           throw new Error("이미지 저장 모듈을 불러오지 못했습니다.");
         }
-        return await window.html2canvas(clone, {
+        const reportCanvas = await window.html2canvas(clone, {
           backgroundColor: "#ffffff",
           scale: 2,
           useCORS: true,
@@ -6091,6 +6119,7 @@ select[multiple] {
           windowWidth: clone.scrollWidth,
           windowHeight: clone.scrollHeight
         });
+        return fitCanvasToPortraitA4(reportCanvas);
       } finally {
         holder.remove();
       }
@@ -6123,7 +6152,7 @@ select[multiple] {
         const canvas = await renderReportPageCanvas();
         const JsPdf = window.jspdf?.jsPDF;
         if (!JsPdf) throw new Error("PDF 저장 모듈을 불러오지 못했습니다.");
-        const pdf = new JsPdf({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+        const pdf = new JsPdf({ orientation: "p", unit: "mm", format: [210, 297], compress: true });
         const margin = 5;
         const pageWidth = 210 - margin * 2;
         const pageHeight = 297 - margin * 2;
