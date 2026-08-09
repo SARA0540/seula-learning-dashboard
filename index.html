@@ -4729,25 +4729,6 @@ select[multiple] {
       refreshDashboard();
     }
 
-    async function clearTeacherRemoteTables(client) {
-      const tables = [
-        "word_memory_checks",
-        "daily_statuses",
-        "observations",
-        "counseling_records",
-        "progress_logs",
-        "word_tests",
-        "monthly_tests",
-        "students",
-        "textbooks"
-      ];
-      for (const table of tables) {
-        const key = table === "word_memory_checks" ? "key" : "id";
-        const result = await client.from(table).delete().neq(key, "__never__");
-        if (result.error) throw result.error;
-      }
-    }
-
     async function upsertRows(client, table, rows) {
       if (!rows.length) return;
       const result = await client.from(table).upsert(rows);
@@ -4768,7 +4749,6 @@ select[multiple] {
         const rows = appDataToSupabaseRows();
         if (profile.role === "teacher") {
           setSupabaseStatus("Supabase 저장 중", "warn");
-          await clearTeacherRemoteTables(client);
           await upsertRows(client, "students", rows.students);
           await upsertRows(client, "textbooks", rows.textbooks);
           await upsertRows(client, "monthly_tests", rows.monthly_tests);
@@ -6373,7 +6353,7 @@ select[multiple] {
         if (!selectedStudentId) return;
         studentEditId = "";
         data.students = data.students.filter((item) => item.id !== selectedStudentId);
-        ["monthlyTests", "wordTests", "progressLogs", "counselingRecords", "observations", "dailyStatuses"].forEach((key) => {
+        ["monthlyTests", "wordTests", "progressLogs", "counselingRecords", "observations", "dailyStatuses", "wordMemoryChecks"].forEach((key) => {
           data[key] = data[key].filter((item) => item.studentId !== selectedStudentId);
         });
         selectedStudentId = data.students[0]?.id || "";
