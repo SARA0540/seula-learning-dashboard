@@ -915,6 +915,62 @@ select[multiple] {
       gap: 12px;
     }
 
+    .renewal-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .renewal-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 96px;
+      gap: 12px;
+      align-items: center;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .renewal-item:first-child {
+      padding-top: 0;
+    }
+
+    .renewal-item:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .renewal-item-main {
+      min-width: 0;
+    }
+
+    .renewal-item-main strong,
+    .renewal-item-main span {
+      display: block;
+    }
+
+    .renewal-item-main span {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .renewal-percent {
+      display: grid;
+      gap: 5px;
+      justify-items: end;
+      text-align: right;
+    }
+
+    .renewal-percent strong {
+      color: var(--brand);
+      font-size: 17px;
+    }
+
+    .renewal-percent span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
     .class-overview-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2256,11 +2312,12 @@ select[multiple] {
           <section class="panel">
             <div class="panel-head">
               <div>
-                <p class="eyebrow">Score Mix</p>
-                <h2>영역별 평균</h2>
+                <p class="eyebrow">Next Book</p>
+                <h2>새 교재 준비</h2>
               </div>
+              <span class="status warn">진도 80% 이상</span>
             </div>
-            <div class="bar-list" id="sectionBars"></div>
+            <div class="renewal-list" id="renewalList"></div>
           </section>
         </div>
       </section>
@@ -3771,19 +3828,28 @@ select[multiple] {
       `).join("");
     }
 
-    function renderSectionBars() {
-      const sections = MONTHLY_REPORT_SECTIONS;
-      $("#sectionBars").innerHTML = sections.map((section) => {
-        const sectionAvg = avg(data.monthlyTests.filter((item) => item.month === selectedMonth && item.section === section).map((item) => Number(item.score)));
-        const width = Math.max(0, Math.min(100, sectionAvg || 0));
-        return `
-          <div class="bar-line">
-            <span>${section}</span>
-            <div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div>
-            <span>${formatScore(sectionAvg)}</span>
-          </div>
-        `;
-      }).join("");
+    function renderNewBookCandidates() {
+      const candidates = data.students.flatMap((studentItem) => data.textbooks.map((book) => {
+        const progress = textbookProgress(studentItem.id, book.id);
+        return { studentItem, book, progress };
+      }))
+        .filter(({ progress }) => progress.doneUnit > 0 && progress.percent >= 80)
+        .sort((a, b) => b.progress.percent - a.progress.percent || a.studentItem.name.localeCompare(b.studentItem.name, "ko"));
+
+      $("#renewalList").innerHTML = candidates.length
+        ? candidates.map(({ studentItem, book, progress }) => `
+          <article class="renewal-item">
+            <div class="renewal-item-main">
+              <strong>${escapeHtml(studentItem.name)} · ${escapeHtml(textbookLabel(book))}</strong>
+              <span>${escapeHtml(book.category)} · Unit ${progress.doneUnit} / ${progress.totalUnits} · 새 교재 안내 준비</span>
+            </div>
+            <div class="renewal-percent">
+              <strong>${progress.percent}%</strong>
+              <span>진도율</span>
+            </div>
+          </article>
+        `).join("")
+        : `<div class="empty">진도율 80% 이상인 교재가 아직 없습니다.</div>`;
     }
 
     function renderClassOverview() {
@@ -5546,7 +5612,7 @@ select[multiple] {
       updateProgressInputMode();
       renderMetrics();
       renderAttention();
-      renderSectionBars();
+      renderNewBookCandidates();
       renderClassOverview();
       renderStudents();
       renderStudentPortal();
