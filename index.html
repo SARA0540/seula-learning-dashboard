@@ -4983,6 +4983,34 @@ select[multiple] {
       }[type];
     }
 
+    function remoteTableForCollection(collection) {
+      return {
+        monthlyTests: "monthly_tests",
+        wordTests: "word_tests",
+        progressLogs: "progress_logs"
+      }[collection];
+    }
+
+    async function deleteRemoteRow(table, column, value) {
+      const client = getSupabaseClient();
+      if (!client) return true;
+      if (!supabaseUser || !isTeacherAccount()) {
+        window.alert("공용 기록을 삭제하려면 선생님 모드에서 Supabase 로그인을 먼저 해주세요.");
+        return false;
+      }
+      try {
+        const { error } = await client.from(table).delete().eq(column, value);
+        if (error) throw error;
+        setSupabaseStatus("Supabase 삭제 완료", "online");
+        return true;
+      } catch (error) {
+        console.error(error);
+        setSupabaseStatus(`삭제 실패: ${supabaseErrorMessage(error)}`, "warn");
+        window.alert("Supabase에서 기록을 삭제하지 못했습니다. 잠시 후 다시 시도해주세요.");
+        return false;
+      }
+    }
+
     function updateEditUi() {
       const monthlyEditing = editingState.type === "monthly";
       const wordEditing = editingState.type === "word";
@@ -5075,17 +5103,20 @@ select[multiple] {
       setTimeout(() => $(`#${focusId}`)?.focus(), 250);
     }
 
-    function deleteRecentRecord(type, index) {
+    async function deleteRecentRecord(type, index) {
       const collection = collectionForEditType(type);
-      if (!collection || !data[collection]?.[index]) return;
+      const record = data[collection]?.[index];
+      if (!collection || !record) return;
       if (!window.confirm("이 입력 내역을 삭제할까요?")) return;
+      const remoteTable = remoteTableForCollection(collection);
+      if (remoteTable && !(await deleteRemoteRow(remoteTable, "id", record.id))) return;
       data[collection].splice(index, 1);
       resetEditState();
       saveData();
       renderAll();
     }
 
-    function editStudentSavedCheck(key) {
+    async function editStudentSavedCheck(key) {
       const record = memoryCheckFor(key);
       if (!record) return;
 
@@ -5121,6 +5152,7 @@ select[multiple] {
         return;
       }
       const nextKey = selfStudyCheckKey(record.studentId, nextDate, info.category, info.bookId, nextUnits);
+      if (nextKey !== record.key && !(await deleteRemoteRow("word_memory_checks", "key", record.key))) return;
       const duplicate = memoryCheckFor(nextKey);
       if (duplicate && duplicate !== record) {
         duplicate.checked = true;
@@ -5135,9 +5167,10 @@ select[multiple] {
       renderAll();
     }
 
-    function deleteStudentSavedCheck(key) {
+    async function deleteStudentSavedCheck(key) {
       const record = memoryCheckFor(key);
       if (!record || !window.confirm("학생이 저장한 이 기록을 삭제할까요?")) return;
+      if (!(await deleteRemoteRow("word_memory_checks", "key", key))) return;
       data.wordMemoryChecks = data.wordMemoryChecks.filter((item) => item !== record);
       saveData();
       renderAll();
@@ -6394,12 +6427,14 @@ select[multiple] {
         event.target.value = event.target.value.replace(/\D/g, "").slice(0, 4);
       });
 
-      $("#deleteStudentButton").addEventListener("click", () => {
+      $("#deleteStudentButton").addEventListener("click", async () => {
         if (!selectedStudentId) return;
+        const deletedStudentId = selectedStudentId;
+        if (!(await deleteRemoteRow("students", "id", deletedStudentId))) return;
         studentEditId = "";
-        data.students = data.students.filter((item) => item.id !== selectedStudentId);
+        data.students = data.students.filter((item) => item.id !== deletedStudentId);
         ["monthlyTests", "wordTests", "progressLogs", "counselingRecords", "observations", "dailyStatuses", "wordMemoryChecks"].forEach((key) => {
-          data[key] = data[key].filter((item) => item.studentId !== selectedStudentId);
+          data[key] = data[key].filter((item) => item.studentId !== deletedStudentId);
         });
         selectedStudentId = data.students[0]?.id || "";
         clearStudentForm();
