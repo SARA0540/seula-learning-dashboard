@@ -1268,6 +1268,10 @@ select[multiple] {
     .progress-report-table .monthly-progress-row td {
       background: #eef7f2;
       font-weight: 900;
+      font-size: 9px;
+      white-space: nowrap;
+      word-break: normal;
+      overflow-wrap: normal;
     }
 
     .report-table-scroll {
@@ -1540,6 +1544,10 @@ select[multiple] {
     .report-card.one-page-export .progress-report-table td {
       height: 20px;
       padding: 3px;
+    }
+
+    .report-card.one-page-export .progress-report-table .monthly-progress-row td {
+      font-size: 7.5px;
     }
 
     .report-card.one-page-export .comment-box {
@@ -3583,10 +3591,17 @@ select[multiple] {
       return values.length ? values.join("<br>") : "";
     }
 
-    function progressTestText(item) {
+    function progressScoreText(item) {
       const memo = String(item?.memo || "").trim();
       const score = memo.match(/\d+(?:\.\d+)?\s*\/\s*\d+(?:\.\d+)?/);
       if (score) return score[0].replace(/\s+/g, "");
+      return "";
+    }
+
+    function progressTestText(item) {
+      const memo = String(item?.memo || "").trim();
+      const score = progressScoreText(item);
+      if (score) return score;
       if (/test|시험|테스트/i.test(memo)) return memo;
       return "";
     }
@@ -3604,13 +3619,18 @@ select[multiple] {
       const progressUnits = data.progressLogs
         .filter((log) => log.studentId === studentId && log.bookId === bookId)
         .flatMap((log) => unitsForRecord(log));
+      const studentSelfStudyUnits = data.wordMemoryChecks
+        .filter((item) => item.studentId === studentId && item.checked && isSelfStudyCheck(item))
+        .map((item) => selfStudyCheckInfo(item))
+        .filter((info) => info?.bookId === bookId)
+        .flatMap((info) => info.units);
       const wordUnits = data.wordTests
         .filter((test) => test.studentId === studentId && test.bookId === bookId)
         .flatMap((test) => normalizeUnits([
           test.unit,
           ...(String(test.unitText || "").match(/\d+/g) || [])
         ]));
-      const doneUnit = Math.max(0, ...progressUnits, ...wordUnits);
+      const doneUnit = Math.max(0, ...progressUnits, ...studentSelfStudyUnits, ...wordUnits);
       const percentValue = Math.min(100, Math.round((doneUnit / book.totalUnits) * 100));
       return { doneUnit, totalUnits: book.totalUnits, percent: percentValue };
     }
@@ -5256,7 +5276,27 @@ select[multiple] {
       const reportScores = sections.map((section) => tests.find((item) => item.section === section)).filter(Boolean);
       const reportMonthlyAvg = avg(reportScores.map((item) => Number(item.score)));
       const reportPreviousAvg = avg(reportScores.map((item) => Number(item.previous)));
-      const memorizedTotal = memorizedWordTotal(wordTests);
+      const studentDailyWords = data.wordMemoryChecks
+        .filter((item) => item.studentId === active.id && item.checked && isDailyWordMemory(item))
+        .map((item) => {
+          const parts = String(item.key).split("|").map((value) => decodeURIComponent(value));
+          return { date: parts[2] || "", memorized: Number(item.memorized) || 0 };
+        })
+        .filter((item) => item.date.startsWith(selectedMonth));
+      const studentDailyWordsByDate = new Map(studentDailyWords.map((item) => [item.date, item.memorized]));
+      const studentSelfStudy = data.wordMemoryChecks
+        .filter((item) => item.studentId === active.id && item.checked && isSelfStudyCheck(item))
+        .map((item) => selfStudyCheckInfo(item))
+        .filter((info) => info?.date?.startsWith(selectedMonth));
+      const memorizedTotal = wordTests.reduce((total, item) => (
+        studentDailyWordsByDate.has(item.date) ? total : total + (Number(item.memorized) || 0)
+      ), 0) + studentDailyWords.reduce((total, item) => total + item.memorized, 0);
+      const studentStudyLabel = (info) => {
+        const book = textbookById(info.bookId);
+        return book
+          ? `${reportTextbookLabel(book)} ${bookUnitsLabel(book, info.units)}`
+          : `[${info.category}] ${unitListLabel(info.units)}`;
+      };
 
       const scoreRows = sections.map((section) => {
         const row = tests.find((item) => item.section === section);
@@ -5279,7 +5319,8 @@ select[multiple] {
 
       const usedBookIds = [...new Set([
         ...wordTests.map((item) => item.bookId),
-        ...progress.map((item) => item.bookId)
+        ...progress.map((item) => item.bookId),
+        ...studentSelfStudy.map((item) => item.bookId)
       ].filter(Boolean))];
       const reportBookRows = sortedTextbooks()
         .filter((book) => usedBookIds.includes(book.id))
@@ -5324,19 +5365,31 @@ select[multiple] {
 
       const progressDates = [...new Set([
         ...wordTests.map((item) => item.date),
-        ...progress.map((item) => item.date)
+        ...progress.map((item) => item.date),
+        ...studentDailyWords.map((item) => item.date),
+        ...studentSelfStudy.map((item) => item.date)
       ].filter(Boolean))].sort((a, b) => a.localeCompare(b));
       const progressRows = progressDates.map((date) => {
         const dayWords = wordTests.filter((item) => item.date === date);
         const dayProgress = progress.filter((item) => item.date === date);
         const byCategory = (category) => dayProgress.filter((item) => item.category === category);
-        const wordRange = progressReportText(dayWords, reportWordRangeLabel);
-        const wordScore = progressReportText(dayWords, (item) => item.score);
+        const studentMemorized = studentDailyWordsByDate.get(date) || 0;
+        const studentProgressByCategory = (category) => studentSelfStudy.filter((item) => item.date === date && item.category === category);
+        const teacherWordRange = progressReportText(dayWords, reportWordRangeLabel);
+        const teacherWordScore = progressReportText(dayWords, (item) => item.score);
+        const wordRange = studentMemorized
+          ? `${teacherWordRange ? `${teacherWordRange}<br>` : ""}학생 암기량`
+          : teacherWordRange;
+        const wordScore = studentMemorized
+          ? `${teacherWordScore ? `${teacherWordScore}<br>` : ""}${studentMemorized}개`
+          : teacherWordScore;
         const wordMax = progressReportText(dayWords, (item) => item.max);
-        const readingProgress = progressReportText(byCategory("독해"), reportLessonLabel);
-        const readingWords = progressReportText(byCategory("단어"), (item) => item.manualLesson || item.lesson);
-        const grammarProgress = progressReportText(byCategory("문법"), reportLessonLabel);
-        const testProgress = progressReportText(dayProgress, progressTestText);
+        const readingProgress = progressReportText(byCategory("독해"), reportLessonLabel)
+          + (studentProgressByCategory("독해").length ? `${byCategory("독해").length ? "<br>" : ""}${progressReportText(studentProgressByCategory("독해"), studentStudyLabel)}` : "");
+        const readingWords = progressReportText(byCategory("독해"), progressScoreText);
+        const grammarProgress = progressReportText(byCategory("문법"), reportLessonLabel)
+          + (studentProgressByCategory("문법").length ? `${byCategory("문법").length ? "<br>" : ""}${progressReportText(studentProgressByCategory("문법"), studentStudyLabel)}` : "");
+        const testProgress = progressReportText(byCategory("문법"), progressTestText);
         return `
           <tr>
             <td class="date-cell">${reportDateLabel(date)}</td>
