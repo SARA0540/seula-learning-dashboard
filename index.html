@@ -1220,7 +1220,53 @@ select[multiple] {
     }
 
     .student-course-cell {
-      min-width: 170px;
+      min-width: 250px;
+    }
+
+    .student-course-line {
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr) 38px;
+      gap: 6px;
+      align-items: center;
+      padding: 3px 0;
+    }
+
+    .student-course-line + .student-course-line {
+      border-top: 1px solid #edf1ed;
+    }
+
+    .student-course-line em {
+      color: var(--muted);
+      font-size: 11px;
+      font-style: normal;
+      font-weight: 900;
+    }
+
+    .student-course-line strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+    }
+
+    .student-course-line b {
+      color: var(--brand);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .student-course-meter {
+      grid-column: 2 / -1;
+      height: 5px;
+      overflow: hidden;
+      border-radius: 3px;
+      background: #e9eeea;
+    }
+
+    .student-course-meter i {
+      display: block;
+      height: 100%;
+      background: var(--brand-2);
     }
 
     .student-management-table .inline-actions {
@@ -2534,7 +2580,6 @@ select[multiple] {
             <label>학교<input id="newSchool" type="text" placeholder="예: 장동초등학교"></label>
             <label>학년<input id="newGrade" type="text" placeholder="예: 5학년"></label>
             <label>수업 요일·시간<input id="newDays" type="text" placeholder="예: 월·수·금 16:00-18:00"></label>
-            <label>현재 과정<input id="newCurrentCourse" type="text" placeholder="예: 초6-2 진심화"></label>
             <label>입학일<input id="newEnrollmentDate" type="date"></label>
             <label>학생 접속번호<input id="newAccessCode" type="text" inputmode="numeric" maxlength="4" placeholder="예: 1357"></label>
           </div>
@@ -4078,7 +4123,7 @@ select[multiple] {
     }
 
     function clearStudentForm() {
-      ["#newName", "#newSchool", "#newGrade", "#newDays", "#newCurrentCourse", "#newEnrollmentDate", "#newAccessCode"].forEach((selector) => {
+      ["#newName", "#newSchool", "#newGrade", "#newDays", "#newEnrollmentDate", "#newAccessCode"].forEach((selector) => {
         $(selector).value = "";
       });
       $("#newStudentStatus").value = "재원생";
@@ -4106,7 +4151,6 @@ select[multiple] {
       $("#newGrade").value = target.grade === "-" ? "" : target.grade || "";
       $("#newDays").value = target.days === "-" ? "" : target.days || "";
       $("#newStudentStatus").value = target.status || "재원생";
-      $("#newCurrentCourse").value = target.currentCourse || "";
       $("#newEnrollmentDate").value = target.enrollmentDate || "";
       $("#newAccessCode").value = target.accessCode || "";
       $("#addStudentButton").textContent = "학생 정보 수정 저장";
@@ -4145,7 +4189,6 @@ select[multiple] {
         grade: $("#newGrade").value.trim() || "-",
         days: $("#newDays").value.trim() || "-",
         status: $("#newStudentStatus").value,
-        currentCourse: $("#newCurrentCourse").value.trim(),
         enrollmentDate: $("#newEnrollmentDate").value,
         accessCode: accessCode || generateAccessCode()
       };
@@ -4179,6 +4222,39 @@ select[multiple] {
       return "status";
     }
 
+    function latestCourseBook(studentId, category) {
+      const records = category === "단어"
+        ? data.wordTests.filter((item) => item.studentId === studentId && item.bookId)
+        : data.progressLogs.filter((item) => item.studentId === studentId && item.category === category && item.bookId);
+      const latest = records.sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))[0];
+      if (latest?.bookId) return textbookById(latest.bookId);
+
+      const selfStudy = data.wordMemoryChecks
+        .filter((item) => item.studentId === studentId && item.checked && isSelfStudyCheck(item))
+        .map((item) => selfStudyCheckInfo(item))
+        .filter((info) => info?.category === category && info.bookId)
+        .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))[0];
+      return selfStudy ? textbookById(selfStudy.bookId) : null;
+    }
+
+    function studentCourseProgressHtml(studentId) {
+      return ["단어", "문법", "독해"].map((category) => {
+        const book = latestCourseBook(studentId, category);
+        if (!book) {
+          return `<div class="student-course-line"><em>${category}</em><strong>기록 없음</strong><b>-</b></div>`;
+        }
+        const progress = textbookProgress(studentId, book.id);
+        return `
+          <div class="student-course-line">
+            <em>${category}</em>
+            <strong title="${escapeHtml(reportTextbookLabel(book))}">${escapeHtml(reportTextbookLabel(book))}</strong>
+            <b>${progress.percent}%</b>
+            <span class="student-course-meter"><i style="width:${progress.percent}%"></i></span>
+          </div>
+        `;
+      }).join("");
+    }
+
     function renderStudents() {
       const counts = ["재원생", "휴원생", "퇴원생"].map((status) => ({
         status,
@@ -4194,7 +4270,7 @@ select[multiple] {
       const keyword = studentManagementSearch.trim().toLowerCase();
       const students = data.students
         .filter((item) => !studentManagementStatusFilter || item.status === studentManagementStatusFilter)
-        .filter((item) => !keyword || `${item.name} ${item.school} ${item.grade} ${item.currentCourse}`.toLowerCase().includes(keyword))
+        .filter((item) => !keyword || `${item.name} ${item.school} ${item.grade}`.toLowerCase().includes(keyword))
         .sort((a, b) => a.name.localeCompare(b.name, "ko"));
 
       $("#studentList").innerHTML = students.length
@@ -4207,7 +4283,7 @@ select[multiple] {
             <td><span class="${studentStatusClass(item.status)}">${escapeHtml(item.status)}</span></td>
             <td>${escapeHtml(item.school)} · ${escapeHtml(item.grade)}</td>
             <td>${escapeHtml(item.days)}</td>
-            <td class="student-course-cell"><strong>${escapeHtml(item.currentCourse || "과정 미입력")}</strong></td>
+            <td class="student-course-cell">${studentCourseProgressHtml(item.id)}</td>
             <td>${escapeHtml(item.enrollmentDate || "미입력")}</td>
             <td>
               <div class="inline-actions">
@@ -4600,7 +4676,6 @@ select[multiple] {
           grade: item.grade || null,
           days: item.days || null,
           status: item.status || "재원생",
-          current_course: item.currentCourse || null,
           enrollment_date: item.enrollmentDate || null,
           access_code: normalizeAccessCode(item.accessCode) || null
         })),

@@ -5,7 +5,6 @@ create table if not exists students (
   grade text,
   days text,
   status text not null default '재원생',
-  current_course text,
   enrollment_date date,
   access_code text unique,
   created_at timestamptz not null default now()
@@ -13,7 +12,6 @@ create table if not exists students (
 
 alter table students add column if not exists access_code text;
 alter table students add column if not exists status text not null default '재원생';
-alter table students add column if not exists current_course text;
 alter table students add column if not exists enrollment_date date;
 create unique index if not exists students_access_code_idx
   on students(access_code)
