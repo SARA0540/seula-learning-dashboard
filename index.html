@@ -1160,6 +1160,73 @@ select[multiple] {
       flex-wrap: wrap;
     }
 
+    .student-status-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 14px 0;
+    }
+
+    .student-status-summary .status {
+      min-height: 32px;
+      padding: 0 12px;
+    }
+
+    .student-filter-panel {
+      margin-bottom: 12px;
+      padding: 14px;
+      box-shadow: none;
+    }
+
+    .student-filter-grid {
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) 180px;
+      gap: 10px;
+      max-width: 560px;
+    }
+
+    .student-management-wrap {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .student-management-table {
+      min-width: 920px;
+    }
+
+    .student-management-table th,
+    .student-management-table td {
+      padding: 13px 12px;
+      vertical-align: middle;
+    }
+
+    .student-management-table tbody tr.editing {
+      background: #f2faf5;
+    }
+
+    .student-name-cell strong,
+    .student-name-cell span,
+    .student-course-cell strong,
+    .student-course-cell span {
+      display: block;
+    }
+
+    .student-name-cell span,
+    .student-course-cell span {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .student-course-cell {
+      min-width: 170px;
+    }
+
+    .student-management-table .inline-actions {
+      justify-content: flex-end;
+    }
+
     .form-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1829,6 +1896,10 @@ select[multiple] {
         grid-template-columns: 1fr;
       }
 
+      .student-filter-grid {
+        grid-template-columns: 1fr;
+      }
+
       .outline-row-actions {
         justify-content: flex-start;
       }
@@ -2446,16 +2517,25 @@ select[multiple] {
         <div class="section-head">
           <div>
             <p class="eyebrow">Students</p>
-            <h2>학생 기본 정보</h2>
+            <h2>학생 관리</h2>
           </div>
           <button class="ghost" id="exportDataButton">데이터 내보내기</button>
         </div>
         <section class="panel" id="studentFormPanel">
           <div class="form-grid">
             <label>이름<input id="newName" type="text" placeholder="예: 이서준"></label>
+            <label>상태
+              <select id="newStudentStatus">
+                <option>재원생</option>
+                <option>휴원생</option>
+                <option>퇴원생</option>
+              </select>
+            </label>
             <label>학교<input id="newSchool" type="text" placeholder="예: 장동초등학교"></label>
             <label>학년<input id="newGrade" type="text" placeholder="예: 5학년"></label>
-            <label>수업 요일<input id="newDays" type="text" placeholder="예: 월수금"></label>
+            <label>수업 요일·시간<input id="newDays" type="text" placeholder="예: 월·수·금 16:00-18:00"></label>
+            <label>현재 과정<input id="newCurrentCourse" type="text" placeholder="예: 초6-2 진심화"></label>
+            <label>입학일<input id="newEnrollmentDate" type="date"></label>
             <label>학생 접속번호<input id="newAccessCode" type="text" inputmode="numeric" maxlength="4" placeholder="예: 1357"></label>
           </div>
           <div class="button-row">
@@ -2465,7 +2545,36 @@ select[multiple] {
           </div>
           <p class="edit-note" id="studentEditNote">학생 정보를 수정하는 중입니다.</p>
         </section>
-        <div class="student-list" id="studentList"></div>
+        <div class="student-status-summary" id="studentStatusSummary"></div>
+        <section class="panel student-filter-panel">
+          <div class="student-filter-grid">
+            <label>학생 또는 학교 검색<input id="studentManagementSearch" type="search" placeholder="이름 또는 학교 입력"></label>
+            <label>상태
+              <select id="studentManagementStatus">
+                <option value="">전체 상태</option>
+                <option>재원생</option>
+                <option>휴원생</option>
+                <option>퇴원생</option>
+              </select>
+            </label>
+          </div>
+        </section>
+        <div class="table-wrap student-management-wrap">
+          <table class="student-management-table">
+            <thead>
+              <tr>
+                <th>학생</th>
+                <th>상태</th>
+                <th>학교·학년</th>
+                <th>수업 요일·시간</th>
+                <th>현재 과정</th>
+                <th>입학일</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody id="studentList"></tbody>
+          </table>
+        </div>
       </section>
 
       <section class="view" id="inputView">
@@ -2956,6 +3065,8 @@ select[multiple] {
     let selectedMonth = currentMonth;
     let selectedStudentId = data.students[0]?.id || "";
     let selectedClassGroup = "";
+    let studentManagementStatusFilter = "";
+    let studentManagementSearch = "";
     let dashboardDate = todayString();
     let dashboardSearch = "";
     let studentSelfStudy = { category: "", bookId: "" };
@@ -3029,6 +3140,9 @@ select[multiple] {
         school: student.school || "-",
         grade: student.grade || "-",
         days: student.days || "-",
+        status: ["재원생", "휴원생", "퇴원생"].includes(student.status) ? student.status : "재원생",
+        currentCourse: student.currentCourse || student.current_course || "",
+        enrollmentDate: student.enrollmentDate || student.enrollment_date || "",
         accessCode: normalizeAccessCode(student.accessCode || student.access_code || "")
       }));
 
@@ -3964,9 +4078,10 @@ select[multiple] {
     }
 
     function clearStudentForm() {
-      ["#newName", "#newSchool", "#newGrade", "#newDays", "#newAccessCode"].forEach((selector) => {
+      ["#newName", "#newSchool", "#newGrade", "#newDays", "#newCurrentCourse", "#newEnrollmentDate", "#newAccessCode"].forEach((selector) => {
         $(selector).value = "";
       });
+      $("#newStudentStatus").value = "재원생";
     }
 
     function resetStudentEdit() {
@@ -3990,6 +4105,9 @@ select[multiple] {
       $("#newSchool").value = target.school === "-" ? "" : target.school || "";
       $("#newGrade").value = target.grade === "-" ? "" : target.grade || "";
       $("#newDays").value = target.days === "-" ? "" : target.days || "";
+      $("#newStudentStatus").value = target.status || "재원생";
+      $("#newCurrentCourse").value = target.currentCourse || "";
+      $("#newEnrollmentDate").value = target.enrollmentDate || "";
       $("#newAccessCode").value = target.accessCode || "";
       $("#addStudentButton").textContent = "학생 정보 수정 저장";
       $("#cancelStudentEditButton").classList.remove("hidden");
@@ -4026,6 +4144,9 @@ select[multiple] {
         school: $("#newSchool").value.trim() || "-",
         grade: $("#newGrade").value.trim() || "-",
         days: $("#newDays").value.trim() || "-",
+        status: $("#newStudentStatus").value,
+        currentCourse: $("#newCurrentCourse").value.trim(),
+        enrollmentDate: $("#newEnrollmentDate").value,
         accessCode: accessCode || generateAccessCode()
       };
 
@@ -4052,22 +4173,50 @@ select[multiple] {
       renderAll();
     }
 
+    function studentStatusClass(status) {
+      if (status === "휴원생") return "status warn";
+      if (status === "퇴원생") return "status neutral";
+      return "status";
+    }
+
     function renderStudents() {
-      $("#studentList").innerHTML = data.students.map((item) => {
-        const summary = summaryFor(item.id);
-        return `
-          <article class="student-row ${studentEditId === item.id ? "editing" : ""}">
-            <div>
-              <strong>${item.name}</strong>
-              <span>${item.school} · ${item.grade} · ${item.days} · 접속번호 ${item.accessCode || "미설정"}</span>
-            </div>
-            <div class="student-row-actions">
-              <span class="${summary.risk ? "status risk" : "status"}">${summary.risk ? "확인 필요" : "안정권"}</span>
-              <button class="tiny-button" type="button" data-student-edit="${item.id}">수정</button>
-            </div>
-          </article>
-        `;
-      }).join("");
+      const counts = ["재원생", "휴원생", "퇴원생"].map((status) => ({
+        status,
+        count: data.students.filter((item) => item.status === status).length
+      }));
+      $("#studentStatusSummary").innerHTML = [
+        `<span class="status neutral">학생 전체 ${data.students.length}명</span>`,
+        ...counts.map(({ status, count }) => `<span class="${studentStatusClass(status)}">${status} ${count}명</span>`)
+      ].join("");
+
+      $("#studentManagementSearch").value = studentManagementSearch;
+      $("#studentManagementStatus").value = studentManagementStatusFilter;
+      const keyword = studentManagementSearch.trim().toLowerCase();
+      const students = data.students
+        .filter((item) => !studentManagementStatusFilter || item.status === studentManagementStatusFilter)
+        .filter((item) => !keyword || `${item.name} ${item.school} ${item.grade} ${item.currentCourse}`.toLowerCase().includes(keyword))
+        .sort((a, b) => a.name.localeCompare(b.name, "ko"));
+
+      $("#studentList").innerHTML = students.length
+        ? students.map((item) => `
+          <tr class="${studentEditId === item.id ? "editing" : ""}">
+            <td class="student-name-cell">
+              <strong>${escapeHtml(item.name)}</strong>
+              <span>접속번호 ${escapeHtml(item.accessCode || "미설정")}</span>
+            </td>
+            <td><span class="${studentStatusClass(item.status)}">${escapeHtml(item.status)}</span></td>
+            <td>${escapeHtml(item.school)} · ${escapeHtml(item.grade)}</td>
+            <td>${escapeHtml(item.days)}</td>
+            <td class="student-course-cell"><strong>${escapeHtml(item.currentCourse || "과정 미입력")}</strong></td>
+            <td>${escapeHtml(item.enrollmentDate || "미입력")}</td>
+            <td>
+              <div class="inline-actions">
+                <button class="tiny-button" type="button" data-student-edit="${item.id}">수정</button>
+              </div>
+            </td>
+          </tr>
+        `).join("")
+        : `<tr><td colspan="7">조건에 맞는 학생이 없습니다.</td></tr>`;
     }
 
     function renderRecent() {
@@ -4450,6 +4599,9 @@ select[multiple] {
           school: item.school || null,
           grade: item.grade || null,
           days: item.days || null,
+          status: item.status || "재원생",
+          current_course: item.currentCourse || null,
+          enrollment_date: item.enrollmentDate || null,
           access_code: normalizeAccessCode(item.accessCode) || null
         })),
         textbooks: data.textbooks.map((item) => ({
@@ -4539,6 +4691,9 @@ select[multiple] {
           school: item.school || "-",
           grade: item.grade || "-",
           days: item.days || "-",
+          status: item.status || "재원생",
+          currentCourse: item.current_course || "",
+          enrollmentDate: item.enrollment_date || "",
           accessCode: item.access_code || ""
         })),
         textbooks: (rows.textbooks || []).map((item) => ({
@@ -6515,6 +6670,14 @@ select[multiple] {
       $("#studentList").addEventListener("click", (event) => {
         const button = event.target.closest("[data-student-edit]");
         if (button) editStudent(button.dataset.studentEdit);
+      });
+      $("#studentManagementSearch").addEventListener("input", (event) => {
+        studentManagementSearch = event.target.value;
+        renderStudents();
+      });
+      $("#studentManagementStatus").addEventListener("change", (event) => {
+        studentManagementStatusFilter = event.target.value;
+        renderStudents();
       });
       $("#newAccessCode").addEventListener("input", (event) => {
         event.target.value = event.target.value.replace(/\D/g, "").slice(0, 4);
